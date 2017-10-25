@@ -1,0 +1,8 @@
+# Created by .ignore support plugin (hsz.mobi)
+secrets.py
+.envrc
+.idea/congress_bot.iml
+.idea/inspectionProfiles/
+.idea/misc.xml
+.idea/modules.xml
+.idea/workspace.xml
