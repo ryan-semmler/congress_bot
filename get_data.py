@@ -44,12 +44,37 @@ class Bill:
         self.short_title = data['short_title']
         self.url = data['congressdotgov_url']
         self.govtrack_url = data['govtrack_url']
-        year_month_day = [int(thing) for thing in data['introduced_date'].split('-')]
-        self.date = datetime.date(year_month_day[0], year_month_day[1], year_month_day[2])
+        year, month, day = [int(thing) for thing in data['introduced_date'].split('-')]
+        self.date = datetime.date(year, month, day)
         self.subject = data['primary_subject']
 
     def __repr__(self):
         return f"{self.number}: {self.short_title}"
+
+    def __str__(self):
+        return self.__repr__()
+
+
+class Vote:
+    def __init__(self, member, data):
+        self.member = member
+        self.session = data['session']
+        self.bill = data['bill']
+        self.description = data['description']
+        self.question = data['question']
+        self.result = data['result']
+        year, month, day = [int(thing) for thing in data['date'].split('-')]
+        self.date = datetime.date(year, month, day)
+        self.position = data['position']
+        self.for_passage = 'pass' in self.question.lower()
+
+    def __repr__(self):
+        connector = ' '
+        if 'to' not in self.description[:2].lower():
+            connector += 'on '
+        if 'act' in self.description[-3:].lower():
+            connector += 'the '
+        return f"Voted {self.position}{connector}{self.description}."
 
     def __str__(self):
         return self.__repr__()
@@ -76,9 +101,7 @@ def get_bills(member):
 
 
 # find votes by members
-def sen_get_votes():
-    pass
-
-
-def house_get_votes():
-    pass
+def get_votes(member):
+    vote_data = requests.get(f"https://api.propublica.org/congress/v1/members/{member.id}/votes.json",
+                             headers=propublica_header).json()['results'][0]['votes']
+    return [Vote(member, data) for data in vote_data]
