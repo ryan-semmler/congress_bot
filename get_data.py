@@ -75,7 +75,7 @@ class Vote:
             connector += 'on '
         if 'act' in self.description[-3:].lower():
             connector += 'the '
-        return f"Voted {self.position}{connector}{self.description}."
+        return f"voted {self.position}{connector}{self.description}."
 
     def __str__(self):
         return self.__repr__()

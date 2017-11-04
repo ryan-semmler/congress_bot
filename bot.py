@@ -53,13 +53,6 @@ def filter_data(member):
         'bills': [bill for bill in bills if (bill.date - now).days < 2],
         'votes': [vote for vote in votes if (vote.date - now).days < 2]
     }
-    # new_bills = []
-    # for bill in bills:
-    #     timedelta = bill.date - now
-    #     delta = abs(timedelta.days)
-    #     if delta < 2:
-    #         new_bills.append(bill)
-    # return new_bills
 
 
 def tweet_bill(bill, api):
@@ -72,20 +65,26 @@ def tweet_bill(bill, api):
     api.update_status(tweet)
 
 
-import pdb; pdb.set_trace()
+def tweet_vote(vote, api):
+    member = vote.member
+    tweet = f"{member.name} {vote}"
+    api.update_status(tweet)
 
 
-def tweet_vote(vote):
-    pass
+def get_data_and_tweet(member, api):
+    data = filter_data(member)
+    bills = data['bills']
+    for bill in bills:
+        tweet_bill(bill, api)
+    votes = data['votes']
+    for vote in votes:
+        tweet_vote(vote, api)
 
 
 def main():
+    api = get_api()
     members = get_senators() + [get_rep()]
-    for member in members:
-        data = filter_data(member)
-        bills = data['bills']
-        for bill in bills:
-            tweet_bill(bill)
-        votes = data['votes']
-        for vote in votes:
-            tweet_vote(vote)
+    while True:
+        for member in members:
+            get_data_and_tweet(member, api)
+        time.sleep(3600)
