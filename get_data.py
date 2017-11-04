@@ -41,6 +41,7 @@ class Bill:
     def __init__(self, member, data):
         self.member = member
         self.number = data['number']
+        self.id = data['bill_id']
         self.title = data['title']
         self.short_title = data['short_title']
         self.url = data['congressdotgov_url']
@@ -54,6 +55,9 @@ class Bill:
 
     def __str__(self):
         return self.__repr__()
+
+    def __eq__(self, other):
+        return all((self.id == other.id, self.date == other.date))
 
 
 class Vote:
@@ -108,3 +112,5 @@ def get_votes(member):
     vote_data = requests.get(f"https://api.propublica.org/congress/v1/members/{member.id}/votes.json",
                              headers=propublica_header).json()['results'][0]['votes']
     return [Vote(member, data) for data in vote_data]
+
+import pdb; pdb.set_trace()

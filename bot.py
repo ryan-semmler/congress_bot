@@ -1,5 +1,6 @@
 from get_data import get_rep, get_senators, get_bills, get_votes
-from secrets import twitter_config
+from secrets import twitter_config, geocodio_key, propublica_header, lat, lon, cache
+from secrets_format import secrets_format
 from requests_oauthlib import OAuth1
 import tweepy
 import requests
@@ -40,19 +41,43 @@ def get_api():
     return api
 
 
-def filter_data(member):
+# def filter_data(member):
+#     """
+#     Does NOT check against the most recent bill. Does other date check instead.
+#     Returns list of all votes and bills from this member from the last two days
+#     """
+#     bills = get_bills(member)
+#     votes = get_votes(member)
+#     date = time.localtime()
+#     now = datetime.datetime(date.tm_year, date.tm_month, date.tm_day)
+#     return [obj for obj in bills + votes if (obj.date - now).days < 2]
+
+
+def initialize_tweet_cache(members):
     """
-    For now does NOT check against the most recent bill. Does other date check instead.
-    Returns dict w/ keys 'bills' and 'votes'. values are lists.
+    Updates cache in secrets.py to include list of all votes and bills from the last two days
     """
-    bills = get_bills(member)
-    votes = get_votes(member)
     date = time.localtime()
     now = datetime.datetime(date.tm_year, date.tm_month, date.tm_day)
-    return {
-        'bills': [bill for bill in bills if (bill.date - now).days < 2],
-        'votes': [vote for vote in votes if (vote.date - now).days < 2]
-    }
+    bills = sum([get_bills(member) for member in members], [])
+    votes = sum([get_votes(member) for member in members], [])
+    cache = [item for item in bills + votes if (item.date - now).days < 3]
+    with open('secrets.py', 'w') as f:
+        f.write(secrets_format.format(
+            geocodio_key,
+            propublica_header,
+            twitter_config,
+            lat,
+            lon,
+            cache
+        ))
+
+
+def update_tweet_cache(tweet):
+    """
+    Updates cache in secrets.py to include a new object that got tweeted out
+    """
+    pass
 
 
 def tweet_bill(bill, api):
