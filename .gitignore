@@ -6,3 +6,4 @@ secrets.py
 .idea/misc.xml
 .idea/modules.xml
 .idea/workspace.xml
+.__pycache__/

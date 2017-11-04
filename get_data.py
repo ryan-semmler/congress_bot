@@ -14,6 +14,7 @@ class Member:
         self.id = data['id']
         self.first_name = data['first_name']
         self.last_name = data['last_name']
+        self.name = ' '.join((data['first_name'], data['last_name']))
         if 'senator' in data['role'].lower():
             self.chamber = 'Senate'
             self.title = 'Senator'
@@ -102,6 +103,8 @@ def get_bills(member):
 
 # find votes by members
 def get_votes(member):
+
+    # TODO: shorten repr to fit under 140 chars
     vote_data = requests.get(f"https://api.propublica.org/congress/v1/members/{member.id}/votes.json",
                              headers=propublica_header).json()['results'][0]['votes']
     return [Vote(member, data) for data in vote_data]
