@@ -115,5 +115,3 @@ def get_votes(member):
     vote_data = requests.get(f"https://api.propublica.org/congress/v1/members/{member.id}/votes.json",
                              headers=propublica_header).json()['results'][0]['votes']
     return [Vote(member, data) for data in vote_data]
-
-import pdb; pdb.set_trace()

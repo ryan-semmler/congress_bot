@@ -52,7 +52,7 @@ def get_api():
 #     bills = get_bills(member)
 #     votes = get_votes(member)
 #     date = time.localtime()
-#     now = datetime.datetime(date.tm_year, date.tm_month, date.tm_day)
+#     now = datetime.datetime(date.tm_year, date.tm_mon, date.tm_mday)
 #     return [obj for obj in bills + votes if (obj.date - now).days < 2]
 
 
@@ -62,7 +62,7 @@ def initialize_tweet_cache(members):
     Objects in this cache will NOT get tweeted.
     """
     date = time.localtime()
-    now = datetime.datetime(date.tm_year, date.tm_month, date.tm_day)
+    now = datetime.datetime(date.tm_year, date.tm_mon, date.tm_mday)
     bills = sum([get_bills(member) for member in members], [])
     votes = sum([get_votes(member) for member in members], [])
     cache = [item for item in bills + votes if (item.date - now).days < 3]
@@ -77,14 +77,14 @@ def initialize_tweet_cache(members):
         ))
 
 
-def update_tweet_cache(tweet):
+def update_tweet_cache(tweet, cache):
     """
     Updates cache in secrets.py to include a new object that got tweeted out.
     'tweet' refers to Vote and Bill objects that have been tweeted.
     Older tweets removed from cache.
     """
     date = time.localtime()
-    now = datetime.datetime(date.tm_year, date.tm_month, date.tm_day)
+    now = datetime.datetime(date.tm_year, date.tm_mon, date.tm_mday)
     with open('secrets.py', 'w') as f:
         f.write(secrets_format.format(
             geocodio_key,
@@ -94,6 +94,11 @@ def update_tweet_cache(tweet):
             lon,
             [item for item in cache if (item.date - now).days < 3] + [tweet]
         ))
+
+
+# def update_secrets():
+#     geo = "geocodio_key = '{}'".format(geocodio_key)
+#     propublica = f"propublica_header = \{'X-API-Key': '{propublica_header}'\}"
 
 
 def update_status(item, api):
@@ -124,7 +129,7 @@ def get_data_and_tweet(member, api):
     for item in data:
         if item not in cache:
             update_status(item, api)
-            update_tweet_cache(item)
+            update_tweet_cache(item, cache)
 
 
 def main():
@@ -135,3 +140,9 @@ def main():
         for member in members:
             get_data_and_tweet(member, api)
         time.sleep(600)
+
+
+thom = get_senators()[0]
+bill = get_bills(thom)[0]
+update_tweet_cache(bill, cache)
+# import pdb; pdb.set_trace()
