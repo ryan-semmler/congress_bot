@@ -57,7 +57,7 @@ class Bill:
         return self.__repr__()
 
     def __eq__(self, other):
-        return all((self.id == other.id, self.date == other.date))
+        return all((self.id == other.id, self.date == other.date, type(other) == Bill))
 
 
 class Vote:
@@ -84,6 +84,11 @@ class Vote:
     def __str__(self):
         return self.__repr__()
 
+    def __eq__(self, other):
+        if type(other) != Vote:
+            return False
+        return all((self.member == other.member, self.bill['bill_id'] == other.bill['bill_id']))
+
 
 # find congresspeople
 def get_rep():
@@ -107,8 +112,6 @@ def get_bills(member):
 
 # find votes by members
 def get_votes(member):
-
-    # TODO: shorten repr to fit under 140 chars
     vote_data = requests.get(f"https://api.propublica.org/congress/v1/members/{member.id}/votes.json",
                              headers=propublica_header).json()['results'][0]['votes']
     return [Vote(member, data) for data in vote_data]
