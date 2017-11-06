@@ -83,24 +83,38 @@ def make_dict(item):
         }
 
 
+def get_tweets():
+    from secrets import cache
+    return [item['class'](Member(item['member']), item['data']) for item in cache]
+
+
+def days_old(item):
+    date = time.localtime()
+    now = datetime.date(date.tm_year, date.tm_mon, date.tm_mday)
+    return (now - item.date).days
+
+
 def initialize_tweet_cache(members):
     """
     Creates cache in secrets.py to include list of all votes and bills from the last two days.
     Objects in this cache will NOT get tweeted.
     """
-    date = time.localtime()
-    now = datetime.datetime(date.tm_year, date.tm_mon, date.tm_mday)
-    bills = sum([get_bills(member) for member in members], [])
-    votes = sum([get_votes(member) for member in members], [])
-    cache = [make_dict(item) for item in bills + votes if (item.date - now).days < 3]
-    with open('secrets.py', 'w') as f:
+    all_bills = sum([get_bills(member) for member in members], [])
+    new_bills = [bill for bill in all_bills if days_old(bill) < 3]
+    all_votes = sum([get_votes(member) for member in members], [])
+    new_votes = [vote for vote in all_votes if days_old(vote) < 3]
+    new_cache = [{'class': type(item),
+                  'member': make_dict(item.member),
+                  'data': make_dict(item)}
+                 for item in new_bills + new_votes]
+    with open('test.py', 'w') as f:
         f.write(template.format(
             geocodio_key,
             propublica_header,
             twitter_config,
             lat,
             lon,
-            cache
+            new_cache
         ))
 
 
@@ -112,9 +126,8 @@ def update_tweet_cache(tweet, cache):
     """
     date = time.localtime()
     now = datetime.datetime(date.tm_year, date.tm_mon, date.tm_mday)
-    cls = Bill
-    if type(cls) == Vote:
-        cls = Vote
+    cls = (Bill, Vote)[type(tweet) == Vote]
+    tweet_data = [{'class': cls, 'member': make_dict(tweet.member), 'data': make_dict(tweet)}]
     with open('test.py', 'w') as f:
         f.write(template.format(
             geocodio_key,
@@ -122,7 +135,7 @@ def update_tweet_cache(tweet, cache):
             twitter_config,
             lat,
             lon,
-            [item for item in cache if (item.date - now).days < 3] + [{'class': cls, 'member': make_dict(tweet.member), 'data': make_dict(tweet)}]
+            [item for item in cache if days_old(item) < 3] + tweet_data
         ))
 
 
@@ -150,9 +163,9 @@ def get_data_and_tweet(member, api):
     Gets the member's votes and bills, tweets them if they haven't been tweeted already
     """
     data = get_bills(member) + get_votes(member)
-    from secrets import cache
+    tweets = get_tweets()
     for item in data:
-        if item not in cache:
+        if item not in tweets:
             update_status(item, api)
             update_tweet_cache(item, cache)
 
@@ -167,7 +180,11 @@ def main():
         time.sleep(600)
 
 
+members = get_senators() + [get_rep()]
+initialize_tweet_cache(members)
+from test import cache
+import pdb; pdb.set_trace()
 thom = get_senators()[0]
 bill = get_bills(thom)[0]
-update_tweet_cache(bill, cache)
-# import pdb; pdb.set_trace()
+# update_tweet_cache(bill, cache)
+import pdb; pdb.set_trace()

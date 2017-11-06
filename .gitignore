@@ -1,5 +1,6 @@
 # Created by .ignore support plugin (hsz.mobi)
 secrets.py
+test.py
 .envrc
 .idea/
 __pycache__
