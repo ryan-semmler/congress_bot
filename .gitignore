@@ -2,5 +2,6 @@
 secrets.py
 test.py
 .envrc
+.DS_Store
 .idea/
 __pycache__
