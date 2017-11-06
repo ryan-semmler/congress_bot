@@ -1,6 +1,6 @@
-from get_data import get_rep, get_senators, get_bills, get_votes, Bill, Vote
+from get_data import get_rep, get_senators, get_bills, get_votes, Bill, Vote, Member, district
 from secrets import twitter_config, geocodio_key, propublica_header, lat, lon, cache
-from secrets_format import secrets_format
+from secrets_format import template
 from requests_oauthlib import OAuth1
 import tweepy
 import requests
@@ -44,16 +44,43 @@ def get_api():
     return api
 
 
-# def filter_data(member):
-#     """
-#     Does NOT check against the most recent bill. Does other date check instead.
-#     Returns list of all votes and bills from this member from the last two days
-#     """
-#     bills = get_bills(member)
-#     votes = get_votes(member)
-#     date = time.localtime()
-#     now = datetime.datetime(date.tm_year, date.tm_mon, date.tm_mday)
-#     return [obj for obj in bills + votes if (obj.date - now).days < 2]
+def make_dict(item):
+    """
+    Item is a Vote or Bill
+    returns dict of item data in format usable by Vote and Bill inits
+    """
+    if type(item) == Bill:
+        return {
+            'number': item.number,
+            'bill_id': item.id,
+            'title': item.title,
+            'short_title': item.short_title,
+            'congressdotgov_url': item.url,
+            'govtrack_url': item.govtrack_url,
+            'introduced_date': '-'.join([str(thing) for thing in (item.date.year, item.date.month, item.date.day)]),
+            'primary_subject': item.subject
+        }
+    elif type(item) == Vote:
+        return {
+            'session': item.session,
+            'bill': item.bill,
+            'description': item.description,
+            'question': item.question,
+            'result': item.result,
+            'date': '-'.join([str(thing) for thing in (item.date.year, item.date.month, item.date.day)]),
+            'position': item.position
+        }
+    elif type(item) == Member:
+        return {
+            'id': item.id,
+            'first_name': item.first_name,
+            'last_name': item.last_name,
+            'role': '' + 'senator' * (item.title == 'Senator'),
+            'district': district,
+            'party': item.party,
+            'twitter_id': item.handle,
+            'next_election': item.next_election
+        }
 
 
 def initialize_tweet_cache(members):
@@ -65,9 +92,9 @@ def initialize_tweet_cache(members):
     now = datetime.datetime(date.tm_year, date.tm_mon, date.tm_mday)
     bills = sum([get_bills(member) for member in members], [])
     votes = sum([get_votes(member) for member in members], [])
-    cache = [item for item in bills + votes if (item.date - now).days < 3]
+    cache = [make_dict(item) for item in bills + votes if (item.date - now).days < 3]
     with open('secrets.py', 'w') as f:
-        f.write(secrets_format.format(
+        f.write(template.format(
             geocodio_key,
             propublica_header,
             twitter_config,
@@ -85,20 +112,18 @@ def update_tweet_cache(tweet, cache):
     """
     date = time.localtime()
     now = datetime.datetime(date.tm_year, date.tm_mon, date.tm_mday)
-    with open('secrets.py', 'w') as f:
-        f.write(secrets_format.format(
+    cls = Bill
+    if type(cls) == Vote:
+        cls = Vote
+    with open('test.py', 'w') as f:
+        f.write(template.format(
             geocodio_key,
             propublica_header,
             twitter_config,
             lat,
             lon,
-            [item for item in cache if (item.date - now).days < 3] + [tweet]
+            [item for item in cache if (item.date - now).days < 3] + [{'class': cls, 'member': make_dict(tweet.member), 'data': make_dict(tweet)}]
         ))
-
-
-# def update_secrets():
-#     geo = "geocodio_key = '{}'".format(geocodio_key)
-#     propublica = f"propublica_header = \{'X-API-Key': '{propublica_header}'\}"
 
 
 def update_status(item, api):
