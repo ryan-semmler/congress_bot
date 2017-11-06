@@ -58,7 +58,8 @@ def make_dict(item):
             'congressdotgov_url': item.url,
             'govtrack_url': item.govtrack_url,
             'introduced_date': '-'.join([str(thing) for thing in (item.date.year, item.date.month, item.date.day)]),
-            'primary_subject': item.subject
+            'primary_subject': item.subject,
+            'is_vote': False
         }
     elif type(item) == Vote:
         return {
@@ -68,7 +69,8 @@ def make_dict(item):
             'question': item.question,
             'result': item.result,
             'date': '-'.join([str(thing) for thing in (item.date.year, item.date.month, item.date.day)]),
-            'position': item.position
+            'position': item.position,
+            'is_vote': True
         }
     elif type(item) == Member:
         return {
@@ -84,8 +86,11 @@ def make_dict(item):
 
 
 def get_tweets():
+    """
+    Creates Vote or Bill objects from dicts in cache
+    """
     from secrets import cache
-    return [item['class'](Member(item['member']), item['data']) for item in cache]
+    return [(Bill, Vote)[item['data']['is_vote']](Member(item['member']), item['data']) for item in cache]
 
 
 def days_old(item):
@@ -103,8 +108,7 @@ def initialize_tweet_cache(members):
     new_bills = [bill for bill in all_bills if days_old(bill) < 3]
     all_votes = sum([get_votes(member) for member in members], [])
     new_votes = [vote for vote in all_votes if days_old(vote) < 3]
-    new_cache = [{'class': type(item),
-                  'member': make_dict(item.member),
+    new_cache = [{'member': make_dict(item.member),
                   'data': make_dict(item)}
                  for item in new_bills + new_votes]
     with open('test.py', 'w') as f:
@@ -124,10 +128,7 @@ def update_tweet_cache(tweet, cache):
     'tweet' refers to Vote and Bill objects that have been tweeted.
     Older tweets removed from cache.
     """
-    date = time.localtime()
-    now = datetime.datetime(date.tm_year, date.tm_mon, date.tm_mday)
-    cls = (Bill, Vote)[type(tweet) == Vote]
-    tweet_data = [{'class': cls, 'member': make_dict(tweet.member), 'data': make_dict(tweet)}]
+    tweet_data = [{'member': make_dict(tweet.member), 'data': make_dict(tweet)}]
     with open('test.py', 'w') as f:
         f.write(template.format(
             geocodio_key,
@@ -180,11 +181,6 @@ def main():
         time.sleep(600)
 
 
-members = get_senators() + [get_rep()]
-initialize_tweet_cache(members)
-from test import cache
 import pdb; pdb.set_trace()
-thom = get_senators()[0]
-bill = get_bills(thom)[0]
-# update_tweet_cache(bill, cache)
-import pdb; pdb.set_trace()
+if __name__ == '__main__':
+    main()
