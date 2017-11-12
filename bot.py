@@ -1,6 +1,5 @@
 from get_data import get_rep, get_senators, get_bills, get_votes, Bill, Vote, Member, district
-from secrets import twitter_config, geocodio_key, propublica_header, lat, lon, cache
-from secrets_format import template
+from secrets import twitter_config
 from requests_oauthlib import OAuth1
 import tweepy
 import requests
@@ -105,21 +104,14 @@ def initialize_tweet_cache(members):
     Objects in this cache will NOT get tweeted.
     """
     all_bills = sum([get_bills(member) for member in members], [])
-    new_bills = [bill for bill in all_bills if days_old(bill) < 3]
+    new_bills = [bill for bill in all_bills if days_old(bill) < 4]
     all_votes = sum([get_votes(member) for member in members], [])
-    new_votes = [vote for vote in all_votes if days_old(vote) < 3]
+    new_votes = [vote for vote in all_votes if days_old(vote) < 4]
     new_cache = [{'member': make_dict(item.member),
                   'data': make_dict(item)}
                  for item in new_bills + new_votes]
-    with open('test.py', 'w') as f:
-        f.write(template.format(
-            geocodio_key,
-            propublica_header,
-            twitter_config,
-            lat,
-            lon,
-            new_cache
-        ))
+    with open('tweet_history.py', 'w') as f:
+        f.write(new_cache)
 
 
 def update_tweet_cache(tweet, cache):
@@ -129,15 +121,9 @@ def update_tweet_cache(tweet, cache):
     Older tweets removed from cache.
     """
     tweet_data = [{'member': make_dict(tweet.member), 'data': make_dict(tweet)}]
-    with open('test.py', 'w') as f:
-        f.write(template.format(
-            geocodio_key,
-            propublica_header,
-            twitter_config,
-            lat,
-            lon,
-            [item for item in cache if days_old(item) < 3] + tweet_data
-        ))
+    print(tweet_data)
+    with open('tweet_history.py', 'w') as f:
+        f.write([item for item in cache if days_old(item) < 4] + tweet_data)
 
 
 def update_status(item, api):
@@ -166,7 +152,7 @@ def get_data_and_tweet(member, api):
     data = get_bills(member) + get_votes(member)
     tweets = get_tweets()
     for item in data:
-        if item not in tweets:
+        if item not in tweets and days_old(item) < 4:
             update_status(item, api)
             update_tweet_cache(item, cache)
 
@@ -181,6 +167,5 @@ def main():
         time.sleep(600)
 
 
-import pdb; pdb.set_trace()
 if __name__ == '__main__':
     main()

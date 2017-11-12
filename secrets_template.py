@@ -9,6 +9,4 @@ twitter_config = {}
 
 lat = {}
 lon = {}
-
-cache = {}
 """

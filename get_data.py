@@ -57,7 +57,9 @@ class Bill:
         return self.__repr__()
 
     def __eq__(self, other):
-        return all((self.id == other.id, self.date == other.date, type(other) == Bill))
+        if type(other) != Bill:
+            return False
+        return all((self.id == other.id, self.date == other.date))
 
 
 class Vote:
@@ -115,3 +117,13 @@ def get_votes(member):
     vote_data = requests.get(f"https://api.propublica.org/congress/v1/members/{member.id}/votes.json",
                              headers=propublica_header).json()['results'][0]['votes']
     return [Vote(member, data) for data in vote_data]
+
+
+if __name__ == '__main__':
+    senators = get_senators()
+    thom = senators[0]
+    bills = get_bills(thom)
+    bill = get_bills(thom)[0]
+    votes = get_votes(thom)
+    vote = get_votes(thom)[0]
+    import pdb;pdb.set_trace()
