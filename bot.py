@@ -1,5 +1,6 @@
 from get_data import get_rep, get_senators, get_bills, get_votes, Bill, Vote, Member, district
 from secrets import twitter_config
+from tweet_history import history
 from requests_oauthlib import OAuth1
 import tweepy
 import requests
@@ -88,8 +89,8 @@ def get_tweets():
     """
     Creates Vote or Bill objects from dicts in cache
     """
-    from secrets import cache
-    return [(Bill, Vote)[item['data']['is_vote']](Member(item['member']), item['data']) for item in cache]
+    from tweet_history import history
+    return [(Bill, Vote)[item['data']['is_vote']](Member(item['member']), item['data']) for item in history]
 
 
 def days_old(item):
@@ -111,10 +112,10 @@ def initialize_tweet_cache(members):
                   'data': make_dict(item)}
                  for item in new_bills + new_votes]
     with open('tweet_history.py', 'w') as f:
-        f.write(new_cache)
+        f.write(f"history = {new_cache}")
 
 
-def update_tweet_cache(tweet, cache):
+def update_tweet_cache(tweet, history):
     """
     Updates cache in secrets.py to include a new object that got tweeted out.
     'tweet' refers to Vote and Bill objects that have been tweeted.
@@ -123,7 +124,7 @@ def update_tweet_cache(tweet, cache):
     tweet_data = [{'member': make_dict(tweet.member), 'data': make_dict(tweet)}]
     print(tweet_data)
     with open('tweet_history.py', 'w') as f:
-        f.write([item for item in cache if days_old(item) < 4] + tweet_data)
+        f.write(f"history = {[item for item in history if days_old(item) < 4] + tweet_data}")
 
 
 def update_status(item, api):
@@ -154,7 +155,7 @@ def get_data_and_tweet(member, api):
     for item in data:
         if item not in tweets and days_old(item) < 4:
             update_status(item, api)
-            update_tweet_cache(item, cache)
+            update_tweet_cache(item, history)
 
 
 def main():
