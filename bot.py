@@ -85,12 +85,19 @@ def make_dict(item):
         }
 
 
+def make_object(item):
+    """
+    Converts data from tweet_history to Vote or Bill object
+    """
+    return (Bill, Vote)[item['data']['is_vote']](Member(item['member']), item['data'])
+
+
 def get_tweets():
     """
     Creates Vote or Bill objects from dicts in cache
     """
     from tweet_history import history
-    return [(Bill, Vote)[item['data']['is_vote']](Member(item['member']), item['data']) for item in history]
+    return [make_object(item) for item in history]
 
 
 def days_old(item):
@@ -105,9 +112,9 @@ def initialize_tweet_cache(members):
     Objects in this cache will NOT get tweeted.
     """
     all_bills = sum([get_bills(member) for member in members], [])
-    new_bills = [bill for bill in all_bills if days_old(bill) < 4]
+    new_bills = [bill for bill in all_bills if days_old(bill) < 5]
     all_votes = sum([get_votes(member) for member in members], [])
-    new_votes = [vote for vote in all_votes if days_old(vote) < 4]
+    new_votes = [vote for vote in all_votes if days_old(vote) < 5]
     new_cache = [{'member': make_dict(item.member),
                   'data': make_dict(item)}
                  for item in new_bills + new_votes]
@@ -115,7 +122,7 @@ def initialize_tweet_cache(members):
         f.write(f"history = {new_cache}")
 
 
-def update_tweet_cache(tweet, history):
+def update_tweet_cache(tweet):
     """
     Updates cache in secrets.py to include a new object that got tweeted out.
     'tweet' refers to Vote and Bill objects that have been tweeted.
@@ -123,8 +130,12 @@ def update_tweet_cache(tweet, history):
     """
     tweet_data = [{'member': make_dict(tweet.member), 'data': make_dict(tweet)}]
     print(tweet_data)
+    from tweet_history import history
+    import pdb; pdb.set_trace()
     with open('tweet_history.py', 'w') as f:
-        f.write(f"history = {[item for item in history if days_old(item) < 4] + tweet_data}")
+        f.write(f"history = {[item for item in history if days_old(make_object(item)) < 5] + tweet_data}")
+    print("File written.")
+    pdb.set_trace()
 
 
 def update_status(item, api):
@@ -153,9 +164,9 @@ def get_data_and_tweet(member, api):
     data = get_bills(member) + get_votes(member)
     tweets = get_tweets()
     for item in data:
-        if item not in tweets and days_old(item) < 4:
+        if item not in tweets and days_old(item) < 5:
             update_status(item, api)
-            update_tweet_cache(item, history)
+            update_tweet_cache(item)
 
 
 def main():
@@ -163,9 +174,10 @@ def main():
     members = get_senators() + [get_rep()]
     initialize_tweet_cache(members)
     while True:
+        print("----------------------\n    Looping again\n----------------------")
         for member in members:
             get_data_and_tweet(member, api)
-        time.sleep(600)
+        time.sleep(15)
 
 
 if __name__ == '__main__':
