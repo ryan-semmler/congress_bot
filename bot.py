@@ -24,7 +24,7 @@ optional:
 8: RT members' tweets
 """
 
-history_cutoff = 2
+days_old_limit = 2
 
 
 def get_url_len():
@@ -114,9 +114,9 @@ def initialize_tweet_cache(members):
     Objects in this cache will NOT get tweeted.
     """
     all_bills = sum([get_bills(member) for member in members], [])
-    new_bills = [bill for bill in all_bills if days_old(bill) < history_cutoff]
+    new_bills = [bill for bill in all_bills if days_old(bill) < days_old_limit]
     all_votes = sum([get_votes(member) for member in members], [])
-    new_votes = [vote for vote in all_votes if days_old(vote) < history_cutoff]
+    new_votes = [vote for vote in all_votes if days_old(vote) < days_old_limit]
     new_cache = [{'member': make_dict(item.member),
                   'data': make_dict(item)}
                  for item in new_bills + new_votes]
@@ -132,13 +132,16 @@ def update_tweet_cache(tweet):
     """
     tweet_data = [{'member': make_dict(tweet.member), 'data': make_dict(tweet)}]
     print(tweet_data)
+    # import pdb; pdb.set_trace()
     from tweet_history import history
-    import pdb; pdb.set_trace()
     with open('tweet_history.py', 'w') as f:
-        print("----------------\n    Before writing\n----------------")
+        print("----------------\n    Before writing\n----------------\n\n")
         print(f"History (len {len(history)}):", history)
-        f.write(f"history = {[item for item in history if days_old(make_object(item)) < history_cutoff] + tweet_data}")
-    print("----------------\n    After writing\n----------------")
+        combined = [item for item in history if days_old(make_object(item)) < days_old_limit] + tweet_data
+        print(f"Combined (len {len(combined)}):", combined)
+        # f.write(f"history = {[item for item in history if days_old(make_object(item)) < days_old_limit] + tweet_data}")
+        f.write(f"history = {combined}")
+    print("----------------\n    After writing\n----------------\n\n")
     from tweet_history import history
     print(f"History (len {len(history)}):", history)
     # pdb.set_trace()
@@ -170,7 +173,7 @@ def get_data_and_tweet(member, api):
     data = get_bills(member) + get_votes(member)
     tweets = get_tweets()
     for item in data:
-        if item not in tweets and days_old(item) < history_cutoff:
+        if item not in tweets and days_old(item) < days_old_limit:
             update_status(item, api)
             update_tweet_cache(item)
 
@@ -178,14 +181,14 @@ def get_data_and_tweet(member, api):
 def main():
     api = get_api()
     members = get_senators() + [get_rep()]
-    initialize_tweet_cache(members)
+    # initialize_tweet_cache(members)
     while True:
-        print("----------------------\n    Looping again\n----------------------")
         for member in members:
             get_data_and_tweet(member, api)
-        time.sleep(15)
+        input("Press ENTER to continue")
+        print("\n\n----------------------\n    Looping again\n----------------------\n")
 
 
 if __name__ == '__main__':
-    import pdb; pdb.set_trace()
+    # import pdb; pdb.set_trace()
     main()
