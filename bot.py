@@ -24,6 +24,8 @@ optional:
 8: RT members' tweets
 """
 
+history_cutoff = 2
+
 
 def get_url_len():
     auth = OAuth1(twitter_config['consumer_key'],
@@ -112,9 +114,9 @@ def initialize_tweet_cache(members):
     Objects in this cache will NOT get tweeted.
     """
     all_bills = sum([get_bills(member) for member in members], [])
-    new_bills = [bill for bill in all_bills if days_old(bill) < 5]
+    new_bills = [bill for bill in all_bills if days_old(bill) < history_cutoff]
     all_votes = sum([get_votes(member) for member in members], [])
-    new_votes = [vote for vote in all_votes if days_old(vote) < 5]
+    new_votes = [vote for vote in all_votes if days_old(vote) < history_cutoff]
     new_cache = [{'member': make_dict(item.member),
                   'data': make_dict(item)}
                  for item in new_bills + new_votes]
@@ -133,9 +135,13 @@ def update_tweet_cache(tweet):
     from tweet_history import history
     import pdb; pdb.set_trace()
     with open('tweet_history.py', 'w') as f:
-        f.write(f"history = {[item for item in history if days_old(make_object(item)) < 5] + tweet_data}")
-    print("File written.")
-    pdb.set_trace()
+        print("----------------\n    Before writing\n----------------")
+        print(f"History (len {len(history)}):", history)
+        f.write(f"history = {[item for item in history if days_old(make_object(item)) < history_cutoff] + tweet_data}")
+    print("----------------\n    After writing\n----------------")
+    from tweet_history import history
+    print(f"History (len {len(history)}):", history)
+    # pdb.set_trace()
 
 
 def update_status(item, api):
@@ -164,7 +170,7 @@ def get_data_and_tweet(member, api):
     data = get_bills(member) + get_votes(member)
     tweets = get_tweets()
     for item in data:
-        if item not in tweets and days_old(item) < 5:
+        if item not in tweets and days_old(item) < history_cutoff:
             update_status(item, api)
             update_tweet_cache(item)
 
@@ -181,4 +187,5 @@ def main():
 
 
 if __name__ == '__main__':
+    import pdb; pdb.set_trace()
     main()

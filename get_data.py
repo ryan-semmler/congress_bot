@@ -1,12 +1,6 @@
 import requests
-from secrets import geocodio_key, lat, lon, propublica_header
+from secrets import state, district, propublica_header
 import datetime
-
-
-location = requests.get(f'https://api.geocod.io/v1/reverse?q={lat},{lon}&fields=cd'
-                        f'&api_key={geocodio_key}').json()['results'][2]
-state = location['address_components']['state'].lower()
-district = location['fields']['congressional_district']['district_number']
 
 
 class Member:
