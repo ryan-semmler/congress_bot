@@ -25,4 +25,5 @@ def delete_tweets(handle):
             api.destroy_status(id)
 
 
-delete_tweets(handle)
+if __name__ == '__main__':
+    delete_tweets(handle)

@@ -137,9 +137,9 @@ def update_tweet_cache(tweet):
     with open('tweet_history.py', 'w') as f:
         print("----------------\n    Before writing\n----------------\n\n")
         print(f"History (len {len(history)}):", history)
-        combined = [item for item in history if days_old(make_object(item)) < days_old_limit] + tweet_data
+        # combined = [item for item in history if days_old(make_object(item)) < days_old_limit] + tweet_data
+        combined = [item for item in history] + tweet_data  # testing whether filter is problem
         print(f"Combined (len {len(combined)}):", combined)
-        # f.write(f"history = {[item for item in history if days_old(make_object(item)) < days_old_limit] + tweet_data}")
         f.write(f"history = {combined}")
     print("----------------\n    After writing\n----------------\n\n")
     from tweet_history import history
@@ -174,6 +174,7 @@ def get_data_and_tweet(member, api):
     tweets = get_tweets()
     for item in data:
         if item not in tweets and days_old(item) < days_old_limit:
+            import pdb; pdb.set_trace()
             update_status(item, api)
             update_tweet_cache(item)
 
