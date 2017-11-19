@@ -1,5 +1,5 @@
 import tweepy
-from secrets import twitter_config, handle
+from config import twitter_config, handle
 
 
 def get_api():
@@ -13,17 +13,20 @@ def get_api():
 
 
 api = get_api()
+total = 0
 
 
-def delete_tweets(handle):
+def delete_tweets(handle, total):
     while True:
         tweets = api.user_timeline(handle)
+        total += len(tweets)
         if not tweets:
             break
         tweet_ids = [tweet.id for tweet in tweets]
         for id in tweet_ids:
             api.destroy_status(id)
+    print(f"Deleted {total} tweets")
 
 
 if __name__ == '__main__':
-    delete_tweets(handle)
+    delete_tweets(handle, total)

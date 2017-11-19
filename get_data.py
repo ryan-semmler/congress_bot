@@ -1,5 +1,5 @@
 import requests
-from secrets import state, district, propublica_header
+from config import state, district, propublica_header
 import datetime
 
 
@@ -66,7 +66,7 @@ class Vote:
         self.result = data['result']
         year, month, day = [int(thing) for thing in data['date'].split('-')]
         self.date = datetime.date(year, month, day)
-        self.position = data['position']
+        self.position = data['position'].lower()
         self.for_passage = 'pass' in self.question.lower()
 
     def __repr__(self):
@@ -90,7 +90,7 @@ class Vote:
 def get_rep():
     rep_data = requests.get(f"https://api.propublica.org/congress/v1/members/house/{state}/{district}/current.json",
                             headers=propublica_header).json()['results'][0]
-    return Member(rep_data)
+    return [Member(rep_data)]
 
 
 def get_senators():
@@ -120,4 +120,5 @@ if __name__ == '__main__':
     bill = get_bills(thom)[0]
     votes = get_votes(thom)
     vote = get_votes(thom)[0]
+    from bot import days_old
     import pdb;pdb.set_trace()

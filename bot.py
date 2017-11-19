@@ -1,11 +1,12 @@
 from get_data import get_rep, get_senators, get_bills, get_votes, Bill, Vote, Member, district
-from secrets import twitter_config
-from tweet_history import history
+from config import twitter_config
 from requests_oauthlib import OAuth1
 import tweepy
 import requests
 import datetime
 import time
+import json
+from pprint import pprint
 
 
 """
@@ -24,7 +25,8 @@ optional:
 8: RT members' tweets
 """
 
-days_old_limit = 2
+days_old_limit = 4
+max_tweet_len = 280
 
 
 def get_url_len():
@@ -46,13 +48,13 @@ def get_api():
     return api
 
 
-def make_dict(item):
+def make_json(item):
     """
     Item is a Vote or Bill
     returns dict of item data in format usable by Vote and Bill inits
     """
     if type(item) == Bill:
-        return {
+        return json.dumps({
             'number': item.number,
             'bill_id': item.id,
             'title': item.title,
@@ -61,10 +63,10 @@ def make_dict(item):
             'govtrack_url': item.govtrack_url,
             'introduced_date': '-'.join([str(thing) for thing in (item.date.year, item.date.month, item.date.day)]),
             'primary_subject': item.subject,
-            'is_vote': False
-        }
+            'is_vote': 0
+        })
     elif type(item) == Vote:
-        return {
+        return json.dumps({
             'session': item.session,
             'bill': item.bill,
             'description': item.description,
@@ -72,10 +74,10 @@ def make_dict(item):
             'result': item.result,
             'date': '-'.join([str(thing) for thing in (item.date.year, item.date.month, item.date.day)]),
             'position': item.position,
-            'is_vote': True
-        }
+            'is_vote': 1
+        })
     elif type(item) == Member:
-        return {
+        return json.dumps({
             'id': item.id,
             'first_name': item.first_name,
             'last_name': item.last_name,
@@ -84,7 +86,7 @@ def make_dict(item):
             'party': item.party,
             'twitter_id': item.handle,
             'next_election': item.next_election
-        }
+        })
 
 
 def make_object(item):
@@ -94,11 +96,12 @@ def make_object(item):
     return (Bill, Vote)[item['data']['is_vote']](Member(item['member']), item['data'])
 
 
-def get_tweets():
+def get_history():
     """
     Creates Vote or Bill objects from dicts in cache
     """
-    from tweet_history import history
+    with open("tweet_history.json", "r") as f:
+        history = json.load(f)
     return [make_object(item) for item in history]
 
 
@@ -110,41 +113,32 @@ def days_old(item):
 
 def initialize_tweet_cache(members):
     """
-    Creates cache in secrets.py to include list of all votes and bills from the last two days.
+    Creates cache in config.py to include list of all votes and bills from the last two days.
     Objects in this cache will NOT get tweeted.
     """
     all_bills = sum([get_bills(member) for member in members], [])
     new_bills = [bill for bill in all_bills if days_old(bill) < days_old_limit]
     all_votes = sum([get_votes(member) for member in members], [])
     new_votes = [vote for vote in all_votes if days_old(vote) < days_old_limit]
-    new_cache = [{'member': make_dict(item.member),
-                  'data': make_dict(item)}
+    new_cache = [{'member': make_json(item.member),
+                  'data': make_json(item)}
                  for item in new_bills + new_votes]
-    with open('tweet_history.py', 'w') as f:
+    with open('tweet_history.json', 'w') as f:
         f.write(f"history = {new_cache}")
 
 
-def update_tweet_cache(tweet):
+def update_tweet_history(tweet):
     """
-    Updates cache in secrets.py to include a new object that got tweeted out.
+    Updates cache in config.py to include a new object that got tweeted out.
     'tweet' refers to Vote and Bill objects that have been tweeted.
     Older tweets removed from cache.
     """
-    tweet_data = [{'member': make_dict(tweet.member), 'data': make_dict(tweet)}]
-    print(tweet_data)
-    # import pdb; pdb.set_trace()
-    from tweet_history import history
-    with open('tweet_history.py', 'w') as f:
-        print("----------------\n    Before writing\n----------------\n\n")
-        print(f"History (len {len(history)}):", history)
-        # combined = [item for item in history if days_old(make_object(item)) < days_old_limit] + tweet_data
-        combined = [item for item in history] + tweet_data  # testing whether filter is problem
-        print(f"Combined (len {len(combined)}):", combined)
-        f.write(f"history = {combined}")
-    print("----------------\n    After writing\n----------------\n\n")
-    from tweet_history import history
-    print(f"History (len {len(history)}):", history)
-    # pdb.set_trace()
+    tweet_data = [{'member': make_json(tweet.member), 'data': make_json(tweet)}]
+    with open('tweet_history.json', 'r') as f:
+        history = json.load(f)
+    combined = history['data'] + tweet_data
+    with open('tweet_history.json', 'w') as f:
+        f.write(json.dumps({"data": combined}))
 
 
 def update_status(item, api):
@@ -155,14 +149,14 @@ def update_status(item, api):
     if type(item) == Bill:
         url_len = get_url_len()
         text = f"{member.name} introduced {item}"
-        if len(text) > 140 - url_len - 1:
-            text = text[:140 - url_len - 3] + '...'
+        if len(text) > max_tweet_len - url_len - 1:
+            text = text[:max_tweet_len - url_len - 3] + '...'
         tweet = text + f'\n{item.govtrack_url}'
         api.update_status(tweet)
     elif type(item) == Vote:
         tweet = f"{member.name} {item}"
-        if len(tweet) > 140:
-            tweet = tweet[:137] + '...'
+        if len(tweet) > max_tweet_len:
+            tweet = tweet[:max_tweet_len - 3] + '...'
         api.update_status(tweet)
 
 
@@ -170,18 +164,17 @@ def get_data_and_tweet(member, api):
     """
     Gets the member's votes and bills, tweets them if they haven't been tweeted already
     """
-    data = get_bills(member) + get_votes(member)
-    tweets = get_tweets()
+    data = [item for item in get_bills(member) + get_votes(member) if days_old(item) < days_old_limit]
     for item in data:
-        if item not in tweets and days_old(item) < days_old_limit:
-            import pdb; pdb.set_trace()
-            update_status(item, api)
-            update_tweet_cache(item)
+        tweets = get_history()
+        if item not in tweets:
+            # update_status(item, api)
+            update_tweet_history(item)
 
 
 def main():
     api = get_api()
-    members = get_senators() + [get_rep()]
+    members = get_senators() + get_rep()
     # initialize_tweet_cache(members)
     while True:
         for member in members:
@@ -191,5 +184,4 @@ def main():
 
 
 if __name__ == '__main__':
-    # import pdb; pdb.set_trace()
     main()

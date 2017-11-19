@@ -1,8 +1,8 @@
 # Created by .ignore support plugin (hsz.mobi)
-secrets.py
+config.py
 test.py
 .envrc
 .DS_Store
 .idea/
 __pycache__
-tweet_history.py
+tweet_history.json
