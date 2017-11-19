@@ -25,7 +25,7 @@ def delete_tweets(handle, total):
         tweet_ids = [tweet.id for tweet in tweets]
         for id in tweet_ids:
             api.destroy_status(id)
-    print(f"Deleted {total} tweets")
+    print(f"Deleted {total} tweet" + "s" * (total != 1))
 
 
 if __name__ == '__main__':

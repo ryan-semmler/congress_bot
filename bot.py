@@ -48,13 +48,13 @@ def get_api():
     return api
 
 
-def make_json(item):
+def make_dict(item):
     """
     Item is a Vote or Bill
     returns dict of item data in format usable by Vote and Bill inits
     """
     if type(item) == Bill:
-        return json.dumps({
+        return {
             'number': item.number,
             'bill_id': item.id,
             'title': item.title,
@@ -64,9 +64,9 @@ def make_json(item):
             'introduced_date': '-'.join([str(thing) for thing in (item.date.year, item.date.month, item.date.day)]),
             'primary_subject': item.subject,
             'is_vote': 0
-        })
+        }
     elif type(item) == Vote:
-        return json.dumps({
+        return {
             'session': item.session,
             'bill': item.bill,
             'description': item.description,
@@ -75,9 +75,9 @@ def make_json(item):
             'date': '-'.join([str(thing) for thing in (item.date.year, item.date.month, item.date.day)]),
             'position': item.position,
             'is_vote': 1
-        })
+        }
     elif type(item) == Member:
-        return json.dumps({
+        return {
             'id': item.id,
             'first_name': item.first_name,
             'last_name': item.last_name,
@@ -86,7 +86,7 @@ def make_json(item):
             'party': item.party,
             'twitter_id': item.handle,
             'next_election': item.next_election
-        })
+        }
 
 
 def make_object(item):
@@ -102,7 +102,9 @@ def get_history():
     """
     with open("tweet_history.json", "r") as f:
         history = json.load(f)
-    return [make_object(item) for item in history]
+    if history:
+        return [make_object(item) for item in history['data']]
+    return []
 
 
 def days_old(item):
@@ -120,11 +122,12 @@ def initialize_tweet_cache(members):
     new_bills = [bill for bill in all_bills if days_old(bill) < days_old_limit]
     all_votes = sum([get_votes(member) for member in members], [])
     new_votes = [vote for vote in all_votes if days_old(vote) < days_old_limit]
-    new_cache = [{'member': make_json(item.member),
-                  'data': make_json(item)}
+    new_cache = [{'member': make_dict(item.member),
+                  'data': make_dict(item)}
                  for item in new_bills + new_votes]
     with open('tweet_history.json', 'w') as f:
-        f.write(f"history = {new_cache}")
+        json.dump({"data": new_cache}, f)
+        # f.write(f"history = {new_cache}")
 
 
 def update_tweet_history(tweet):
@@ -133,12 +136,16 @@ def update_tweet_history(tweet):
     'tweet' refers to Vote and Bill objects that have been tweeted.
     Older tweets removed from cache.
     """
-    tweet_data = [{'member': make_json(tweet.member), 'data': make_json(tweet)}]
+    tweet_data = [{'member': make_dict(tweet.member), 'data': make_dict(tweet)}]
     with open('tweet_history.json', 'r') as f:
         history = json.load(f)
-    combined = history['data'] + tweet_data
+    if history:
+        combined = history['data'] + tweet_data
+    else:
+        combined = tweet_data
     with open('tweet_history.json', 'w') as f:
-        f.write(json.dumps({"data": combined}))
+        json.dump({"data": combined}, f)
+        # f.write(json.dumps({"data": combined}))
 
 
 def update_status(item, api):
@@ -168,7 +175,7 @@ def get_data_and_tweet(member, api):
     for item in data:
         tweets = get_history()
         if item not in tweets:
-            # update_status(item, api)
+            update_status(item, api)
             update_tweet_history(item)
 
 
