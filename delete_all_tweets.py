@@ -13,20 +13,19 @@ def get_api():
 
 
 api = get_api()
-total = 0
 
 
-def delete_tweets(handle, total):
+def delete_tweets(handle):
+    total = 0
     while True:
         tweets = api.user_timeline(handle)
         total += len(tweets)
         if not tweets:
             break
-        tweet_ids = [tweet.id for tweet in tweets]
-        for id in tweet_ids:
-            api.destroy_status(id)
+        for tweet in tweets:
+            api.destroy_status(tweet.id)
     print(f"Deleted {total} tweet" + "s" * (total != 1))
 
 
 if __name__ == '__main__':
-    delete_tweets(handle, total)
+    delete_tweets(handle)
