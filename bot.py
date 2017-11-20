@@ -6,7 +6,6 @@ import requests
 import datetime
 import time
 import json
-from pprint import pprint
 
 
 """
@@ -127,7 +126,6 @@ def initialize_tweet_cache(members):
                  for item in new_bills + new_votes]
     with open('tweet_history.json', 'w') as f:
         json.dump({"data": new_cache}, f)
-        # f.write(f"history = {new_cache}")
 
 
 def update_tweet_history(tweet):
