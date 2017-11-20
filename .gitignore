@@ -6,3 +6,4 @@ test.py
 .idea/
 __pycache__
 tweet_history.json
+/tweet_history.json

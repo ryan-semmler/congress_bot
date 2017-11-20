@@ -63,7 +63,10 @@ class Vote:
     def __init__(self, member, data):
         self.member = member
         self.session = data['session']
-        self.bill = data['bill']
+        try:
+            self.bill = get_bill_by_id(member, data['bill']['bill_id'])
+        except:
+            self.bill = data['bill']
         self.description = data['description']
         self.question = data['question']
         self.result = data['result']
@@ -86,7 +89,14 @@ class Vote:
     def __eq__(self, other):
         if type(other) != Vote:
             return False
-        return all((self.member == other.member, self.bill['bill_id'] == other.bill['bill_id']))
+        return all((self.member == other.member, self.bill == other.bill))
+
+
+def get_bill_by_id(member, id):
+    bill_id, congress = id.split('-')
+    bill_data = requests.get(f"https://api.propublica.org/congress/v1/{congress}/bills/{bill_id}.json",
+                             headers=propublica_header).json()['results'][0]
+    return Bill(member, bill_data)
 
 
 # find congresspeople
@@ -124,4 +134,16 @@ if __name__ == '__main__':
     votes = get_votes(thom)
     vote = get_votes(thom)[0]
     from bot import days_old
+
+    new_vote_data = {'member_id': 'T000476', 'chamber': 'Senate', 'congress': '115', 'session': '1', 'roll_call': '280',
+                     'vote_uri': 'https://api.propublica.org/congress/v1/115/senate/sessions/1/votes/280.json',
+                     'bill': {'bill_id': 's2126-115', 'number': 'PN875', 'api_uri': None, 'title': None,
+                              'latest_action': None}, 'amendment': {},
+                     'nomination': {'nomination_id': 'PN875-115', 'number': 'PN875', 'name': 'Donald C. Coggins Jr.',
+                                    'agency': 'The Judiciary'},
+                     'description': 'Donald C. Coggins, Jr., of South Carolina, to be United States District Judge for the District of South Carolina',
+                     'question': 'On the Nomination', 'result': 'Nomination Confirmed', 'date': '2017-11-16',
+                     'time': '13:48:00', 'total': {'yes': 96, 'no': 0, 'present': 0, 'not_voting': 4},
+                     'position': 'Yes'}
+    new_vote = Vote(thom, new_vote_data)
     import pdb;pdb.set_trace()

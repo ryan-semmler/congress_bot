@@ -68,7 +68,7 @@ def make_dict(item):
     elif type(item) == Vote:
         return {
             'session': item.session,
-            'bill': item.bill,
+            'bill': item.bill if type(item.bill) == dict else make_dict(item.bill),
             'description': item.description,
             'question': item.question,
             'result': item.result,
@@ -145,7 +145,6 @@ def update_tweet_history(tweet):
         combined = tweet_data
     with open('tweet_history.json', 'w') as f:
         json.dump({"data": combined}, f)
-        # f.write(json.dumps({"data": combined}))
 
 
 def update_status(item, api):
@@ -153,17 +152,21 @@ def update_status(item, api):
     Tweets the thing
     """
     member = item.member
+    url_len = get_url_len()
     if type(item) == Bill:
-        url_len = get_url_len()
         text = f"{member.name} introduced {item}"
         if len(text) > max_tweet_len - url_len - 1:
             text = text[:max_tweet_len - url_len - 3] + '...'
         tweet = text + f'\n{item.govtrack_url}'
         api.update_status(tweet)
     elif type(item) == Vote:
-        tweet = f"{member.name} {item}"
-        if len(tweet) > max_tweet_len:
-            tweet = tweet[:max_tweet_len - 3] + '...'
+        has_bill = type(item.bill) == Bill
+        text = f"{member.name} {item}"
+        if len(text) > max_tweet_len - url_len * has_bill:
+            text = text[:max_tweet_len - url_len * has_bill - 3] + '...'
+        tweet = text
+        if has_bill:
+            tweet += f"\n{item.bill.govtrack_url}"
         api.update_status(tweet)
 
 
