@@ -30,6 +30,9 @@ class Member:
     def __str__(self):
         return self.__repr__()
 
+    def __eq__(self, other):
+        return self.name == other.name
+
 
 class Bill:
     def __init__(self, member, data):
