@@ -135,7 +135,7 @@ if __name__ == '__main__':
     bill = get_bills(thom)[0]
     votes = get_votes(thom)
     vote = get_votes(thom)[0]
-    from bot import days_old
+    from app import days_old
 
     new_vote_data = {'member_id': 'T000476', 'chamber': 'Senate', 'congress': '115', 'session': '1', 'roll_call': '280',
                      'vote_uri': 'https://api.propublica.org/congress/v1/115/senate/sessions/1/votes/280.json',

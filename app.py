@@ -142,7 +142,7 @@ def update_tweet_history(tweet):
     else:
         combined = tweet_data
     with open('tweet_history.json', 'w') as f:
-        json.dump({"data": combined}, f)
+        json.dump({"data": combined}, f, indent=2)
 
 
 def update_status(item, api):
