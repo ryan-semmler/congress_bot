@@ -8,27 +8,14 @@ import time
 import json
 
 
-"""
-Steps:
------------
-1: establish member objects
-2: search for bills
-3: check bills against most_recent_bill to identify new ones
-4: search for votes
-5: check votes against most_recent_vote to ID new ones
-6: tweet bills
-7: tweet votes
-
-optional:
----------
-8: RT members' tweets
-"""
-
 days_old_limit = 4
 max_tweet_len = 280
 
 
 def get_url_len():
+    """
+    Twitter shortens urls to a specific length, which varies by day. Function returns url length
+    """
     auth = OAuth1(twitter_config['consumer_key'],
                   twitter_config['consumer_secret'],
                   twitter_config['access_token'],
@@ -147,7 +134,7 @@ def update_tweet_history(tweet):
 
 def update_status(item, api):
     """
-    Tweets the thing
+    Posts the tweet
     """
     member = item.member
     url_len = get_url_len()

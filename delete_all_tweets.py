@@ -28,4 +28,6 @@ def delete_tweets(handle):
 
 
 if __name__ == '__main__':
-    delete_tweets(handle)
+    response = input("If you continue, all tweets from your twitter account will be deleted. Continue? (y/N): ")
+    if 'y' in response.lower():
+        delete_tweets(handle)
