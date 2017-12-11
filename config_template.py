@@ -3,8 +3,9 @@ template = \
 
 # "consumer_key" is the API key. "Consumer_secret" is the API secret.
 twitter_config = {}
-handle = {}
 
-state = {}
+handle = '{}'
+
+state = '{}'
 district = {}
 """
