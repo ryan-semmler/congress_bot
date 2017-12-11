@@ -1,5 +1,14 @@
-from config_template import template
+template = \
+"""propublica_header = {}
 
+# "consumer_key" is the API key. "Consumer_secret" is the API secret.
+twitter_config = {}
+
+handle = '{}'
+
+state = '{}'
+district = {}
+"""
 
 input("This program will create the configuration file needed to run Congress Bot.\n"
       "Before continuing, make sure you've created a Twitter account and gotten an API key for that account.\n"
@@ -14,8 +23,8 @@ handle = clean(input("Enter the bot's twitter handle: "))
 state = input("Enter your state's two-letter abbreviation: ").lower()
 district = input("Enter the number of the Congressional district used for the bot: ")
 ppublica = input('Enter your Propublica API key: ')
-consumer_key = input("There are four required keys for the Twitter API:"
-                     "consumer key, consumer secret, access token, and access token secret\n"
+consumer_key = input("There are four required keys for the Twitter API: "
+                     "consumer key, consumer secret, access token, and access token secret.\n"
                      "Enter the consumer key: ")
 consumer_secret = input("Enter the consumer secret: ")
 access_token = input("Enter the access token: ")

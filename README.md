@@ -8,10 +8,15 @@ Data on individual senators' votes and sponsored bills comes from [Propublica's 
 When the tweet regards a piece of legislation, a link to the legislation on [govtrack.us](https://www.govtrack.us/) will be included in the tweet.
 
 ## Requirements
+### Packages
 Congress Bot relies on these python packages, which can be installed from pip:
 * requests
 * requests_oauthlib
 * tweepy
+### APIs
+Requires API keys from [Propublica](https://projects.propublica.org/api-docs/congress-api/) and Twitter Apps.
+
 
 ## Setup
-Requires API keys from Propublica and Twitter apps. The keys should be added to a config.py file. More information on formatting the config file can be found in config_template.py
+Run create_config.py to set up your config file.  
+The bot defaults to include the representative for a given district. To include only senators, set include_rep to False in app.py

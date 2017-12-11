@@ -10,6 +10,7 @@ import json
 
 days_old_limit = 4
 max_tweet_len = 280
+include_rep = True
 
 
 def get_url_len():
@@ -169,7 +170,7 @@ def get_data_and_tweet(member, api):
 
 def main():
     api = get_api()
-    members = get_senators() + get_rep()
+    members = get_senators() + get_rep() * include_rep
     # initialize_tweet_cache(members)
     while True:
         for member in members:
