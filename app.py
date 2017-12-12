@@ -21,7 +21,7 @@ def get_url_len():
                   twitter_config['consumer_secret'],
                   twitter_config['access_token'],
                   twitter_config['access_token_secret'])
-
+    
     return requests.get('https://api.twitter.com/1.1/help/configuration.json', auth=auth).json()['short_url_length']
 
 
@@ -97,7 +97,7 @@ def days_old(item):
     now = datetime.date(date.tm_year, date.tm_mon, date.tm_mday)
     if type(item) in (Vote, Bill):
         return (now - item.date).days
-    return (now - item).days
+    return (now - datetime.date(item[0], item[1], item[2])).days
 
 
 # def initialize_tweet_cache(members):
@@ -138,7 +138,7 @@ def update_tweet_history(tweet_text):
     Older tweets removed from cache.
     """
     date = time.localtime()
-    now = datetime.date(date.tm_year, date.tm_mon, date.tm_mday)
+    now = (date.tm_year, date.tm_mon, date.tm_mday)
     tweet_data = (tweet_text, now)
     with open('tweet_history.json', 'r') as f:
         history = json.load(f)
