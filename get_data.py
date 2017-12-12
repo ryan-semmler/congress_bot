@@ -79,7 +79,7 @@ class Vote:
         connector = ' '
         if 'to' not in self.description[:2].lower():
             connector += 'on '
-        if 'act' in self.description[-3:].lower():
+        if 'Act' in self.description:
             connector += 'the '
         if 'not' in self.position:
             return f"did not vote{connector}{self.description}."
