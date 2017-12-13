@@ -121,11 +121,16 @@ def get_bills(member):
     return [Bill(member, data) for data in bill_data]
 
 
+def include_vote(vote):
+    return any([word in vote.question.lower() for word in ("pass", "agree", "nomination", "resolution")])
+
+
 # find votes by members
 def get_votes(member):
     vote_data = requests.get(f"https://api.propublica.org/congress/v1/members/{member.id}/votes.json",
                              headers=propublica_header).json()['results'][0]['votes']
-    return [Vote(member, data) for data in vote_data]
+    all_votes = [Vote(member, data) for data in vote_data]
+    return [vote for vote in all_votes if include_vote(vote)][::-1]
 
 
 if __name__ == '__main__':

@@ -1,1 +1,52 @@
-{"data": [{"member": {"id": "T000476", "first_name": "Thom", "last_name": "Tillis", "role": "senator", "district": 2, "party": "R", "twitter_id": "senthomtillis", "next_election": "2020"}, "data": {"session": "1", "bill": {"bill_id": "pn875-115", "number": "PN875", "api_uri": null, "title": null, "latest_action": null}, "description": "Donald C. Coggins, Jr., of South Carolina, to be United States District Judge for the District of South Carolina", "question": "On the Nomination", "result": "Nomination Confirmed", "date": "2017-11-16", "position": "yes", "is_vote": 1}}, {"member": {"id": "T000476", "first_name": "Thom", "last_name": "Tillis", "role": "senator", "district": 2, "party": "R", "twitter_id": "senthomtillis", "next_election": "2020"}, "data": {"session": "1", "bill": {"bill_id": "pn587-115", "number": "PN587", "api_uri": null, "title": null, "latest_action": null}, "description": "Dabney Langhorne Friedrich, of California, to be United States District Judge for the District of Columbia", "question": "On the Cloture Motion", "result": "Cloture Motion Agreed to", "date": "2017-11-16", "position": "yes", "is_vote": 1}}, {"member": {"id": "T000476", "first_name": "Thom", "last_name": "Tillis", "role": "senator", "district": 2, "party": "R", "twitter_id": "senthomtillis", "next_election": "2020"}, "data": {"session": "1", "bill": {"bill_id": "pn556-115", "number": "PN556", "api_uri": null, "title": null, "latest_action": null}, "description": "Joseph Otting, of Nevada, to be Comptroller of the Currency for a term of five years", "question": "On the Nomination", "result": "Nomination Confirmed", "date": "2017-11-16", "position": "yes", "is_vote": 1}}, {"member": {"id": "B001135", "first_name": "Richard", "last_name": "Burr", "role": "senator", "district": 2, "party": "R", "twitter_id": "SenatorBurr", "next_election": "2022"}, "data": {"session": "1", "bill": {"bill_id": "pn875-115", "number": "PN875", "api_uri": null, "title": null, "latest_action": null}, "description": "Donald C. Coggins, Jr., of South Carolina, to be United States District Judge for the District of South Carolina", "question": "On the Nomination", "result": "Nomination Confirmed", "date": "2017-11-16", "position": "yes", "is_vote": 1}}, {"member": {"id": "B001135", "first_name": "Richard", "last_name": "Burr", "role": "senator", "district": 2, "party": "R", "twitter_id": "SenatorBurr", "next_election": "2022"}, "data": {"session": "1", "bill": {"bill_id": "pn587-115", "number": "PN587", "api_uri": null, "title": null, "latest_action": null}, "description": "Dabney Langhorne Friedrich, of California, to be United States District Judge for the District of Columbia", "question": "On the Cloture Motion", "result": "Cloture Motion Agreed to", "date": "2017-11-16", "position": "yes", "is_vote": 1}}, {"member": {"id": "B001135", "first_name": "Richard", "last_name": "Burr", "role": "senator", "district": 2, "party": "R", "twitter_id": "SenatorBurr", "next_election": "2022"}, "data": {"session": "1", "bill": {"bill_id": "pn556-115", "number": "PN556", "api_uri": null, "title": null, "latest_action": null}, "description": "Joseph Otting, of Nevada, to be Comptroller of the Currency for a term of five years", "question": "On the Nomination", "result": "Nomination Confirmed", "date": "2017-11-16", "position": "yes", "is_vote": 1}}, {"member": {"id": "H001065", "first_name": "George", "last_name": "Holding", "role": "", "district": 2, "party": "R", "twitter_id": "RepHolding", "next_election": "2018"}, "data": {"session": "1", "bill": {"number": "H.R.1", "bill_id": "hr1-115", "title": "To provide for reconciliation pursuant to title II of the concurrent resolution on the budget for fiscal year 2018.", "short_title": "Tax Cuts and Jobs Act", "congressdotgov_url": "https://www.congress.gov/bill/115th-congress/house-bill/1", "govtrack_url": "https://www.govtrack.us/congress/bills/115/hr1", "introduced_date": "2017-11-2", "primary_subject": "Taxation", "is_vote": 0}, "description": "Tax Cuts and Jobs Act", "question": "On Passage", "result": "Passed", "date": "2017-11-16", "position": "yes", "is_vote": 1}}]}
+{
+  "data": [
+    [
+      "Thom Tillis voted yes on Leonard Steven Grasz, of Nebraska, to be United States Circuit Judge for the Eighth Circuit.",
+      [
+        2017,
+        12,
+        12
+      ]
+    ],
+    [
+      "Richard Burr voted yes on Leonard Steven Grasz, of Nebraska, to be United States Circuit Judge for the Eighth Circuit.",
+      [
+        2017,
+        12,
+        12
+      ]
+    ],
+    [
+      "George Holding introduced H.R.4612: To designate the facility of the United States Postal Service located at 125 North Main Street in Louisburg, North Carolina, as the \"Warren E. Massenburg Post Office Building\".",
+      [
+        2017,
+        12,
+        12
+      ]
+    ],
+    [
+      "George Holding voted yes on the Community Institution Mortgage Relief Act of 2017.",
+      [
+        2017,
+        12,
+        12
+      ]
+    ],
+    [
+      "George Holding voted yes on the Protecting Religiously Affiliated Institutions Act of 2017.",
+      [
+        2017,
+        12,
+        12
+      ]
+    ],
+    [
+      "George Holding voted yes on the Financial Institution Customer Protection Act of 2017.",
+      [
+        2017,
+        12,
+        12
+      ]
+    ]
+  ]
+}
