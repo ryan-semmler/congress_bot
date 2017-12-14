@@ -1,6 +1,9 @@
 import requests
-from config import state, district, propublica_header
+from config import state, district, propublica_header, twitter_config
 import datetime
+import tweepy
+from requests_oauthlib import OAuth1
+import pdb
 
 
 class Member:
@@ -33,6 +36,17 @@ class Member:
     def __eq__(self, other):
         return self.name == other.name
 
+    def get_votes(self):
+        vote_data = requests.get(f"https://api.propublica.org/congress/v1/members/{self.id}/votes.json",
+                                 headers=propublica_header).json()['results'][0]['votes']
+        all_votes = [Vote(self, data) for data in vote_data]
+        return [vote for vote in all_votes if vote.include][::-1]
+
+    def get_bills(self):
+        bill_data = requests.get(f"https://api.propublica.org/congress/v1/members/{self.id}/bills/"
+                                 "introduced.json", headers=propublica_header).json()['results'][0]['bills']
+        return [Bill(self, data) for data in bill_data]
+
 
 class Bill:
     def __init__(self, member, data):
@@ -64,7 +78,7 @@ class Vote:
         self.member = member
         self.session = data['session']
         try:
-            self.bill = get_bill_by_id(member, data['bill']['bill_id'])
+            self.bill = self.get_bill_by_id(member, data['bill']['bill_id'])
         except:
             self.bill = data['bill']
         self.description = data['description']
@@ -74,12 +88,13 @@ class Vote:
         self.date = datetime.date(year, month, day)
         self.position = data['position'].lower()
         self.for_passage = 'pass' in self.question.lower()
+        self.include = any([word in self.question.lower() for word in ("pass", "agree", "nomination", "resolution")])
 
     def __repr__(self):
         connector = ' '
         if 'to' not in self.description[:2].lower():
             connector += 'on '
-        if 'Act' in self.description:
+        if 'Act' in self.description.split(',')[0]:
             connector += 'the '
         if 'not' in self.position:
             return f"did not vote{connector}{self.description}."
@@ -93,12 +108,18 @@ class Vote:
             return False
         return all((self.member == other.member, self.bill == other.bill))
 
+    def get_bill_by_id(self, member, id):
+        bill_id, congress = id.split('-')
+        bill_data = requests.get(f"https://api.propublica.org/congress/v1/{congress}/bills/{bill_id}.json",
+                                 headers=propublica_header).json()['results'][0]
+        return Bill(member, bill_data)
 
-def get_bill_by_id(member, id):
-    bill_id, congress = id.split('-')
-    bill_data = requests.get(f"https://api.propublica.org/congress/v1/{congress}/bills/{bill_id}.json",
-                             headers=propublica_header).json()['results'][0]
-    return Bill(member, bill_data)
+
+# def get_bill_by_id(member, id):
+#     bill_id, congress = id.split('-')
+#     bill_data = requests.get(f"https://api.propublica.org/congress/v1/{congress}/bills/{bill_id}.json",
+#                              headers=propublica_header).json()['results'][0]
+#     return Bill(member, bill_data)
 
 
 # find congresspeople
@@ -114,32 +135,27 @@ def get_senators():
     return [Member(data) for data in senators_data]
 
 
-# find bills introduced by members
-def get_bills(member):
-    bill_data = requests.get(f"https://api.propublica.org/congress/v1/members/{member.id}/bills/"
-                             "introduced.json", headers=propublica_header).json()['results'][0]['bills']
-    return [Bill(member, data) for data in bill_data]
+def get_api():
+    auth = tweepy.OAuthHandler(twitter_config['consumer_key'], twitter_config['consumer_secret'])
+    auth.set_access_token(twitter_config['access_token'], twitter_config['access_token_secret'])
+    return tweepy.API(auth)
 
 
-def include_vote(vote):
-    return any([word in vote.question.lower() for word in ("pass", "agree", "nomination", "resolution")])
-
-
-# find votes by members
-def get_votes(member):
-    vote_data = requests.get(f"https://api.propublica.org/congress/v1/members/{member.id}/votes.json",
-                             headers=propublica_header).json()['results'][0]['votes']
-    all_votes = [Vote(member, data) for data in vote_data]
-    return [vote for vote in all_votes if include_vote(vote)][::-1]
+def get_url_len():
+    auth = OAuth1(twitter_config['consumer_key'],
+                  twitter_config['consumer_secret'],
+                  twitter_config['access_token'],
+                  twitter_config['access_token_secret'])
+    return requests.get('https://api.twitter.com/1.1/help/configuration.json', auth=auth).json()['short_url_length']
 
 
 if __name__ == '__main__':
     senators = get_senators()
     thom = senators[0]
-    bills = get_bills(thom)
-    bill = get_bills(thom)[0]
-    votes = get_votes(thom)
-    vote = get_votes(thom)[0]
+    bills = thom.get_bills()
+    bill = thom.get_bills()[0]
+    votes = thom.get_votes()
+    vote = thom.get_votes()[0]
     from app import days_old
 
     new_vote_data = {'member_id': 'T000476', 'chamber': 'Senate', 'congress': '115', 'session': '1', 'roll_call': '280',
@@ -153,4 +169,4 @@ if __name__ == '__main__':
                      'time': '13:48:00', 'total': {'yes': 96, 'no': 0, 'present': 0, 'not_voting': 4},
                      'position': 'Yes'}
     new_vote = Vote(thom, new_vote_data)
-    import pdb;pdb.set_trace()
+    pdb.set_trace()

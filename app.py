@@ -1,8 +1,4 @@
-from get_data import get_rep, get_senators, get_bills, get_votes, Bill, Vote, Member, district
-from config import twitter_config
-from requests_oauthlib import OAuth1
-import tweepy
-import requests
+from get_data import get_rep, get_senators, Bill, Vote, get_api, get_url_len
 import datetime
 import time
 import json
@@ -11,28 +7,8 @@ import json
 days_old_limit = 4
 max_tweet_len = 280
 include_rep = True
-
-
-def get_url_len():
-    """
-    Twitter shortens urls to a specific length, which varies by day. Function returns url length
-    """
-    auth = OAuth1(twitter_config['consumer_key'],
-                  twitter_config['consumer_secret'],
-                  twitter_config['access_token'],
-                  twitter_config['access_token_secret'])
-
-    return requests.get('https://api.twitter.com/1.1/help/configuration.json', auth=auth).json()['short_url_length']
-
-
-def get_api():
-    """
-    Creates tweepy api object
-    """
-    auth = tweepy.OAuthHandler(twitter_config['consumer_key'], twitter_config['consumer_secret'])
-    auth.set_access_token(twitter_config['access_token'], twitter_config['access_token_secret'])
-    api = tweepy.API(auth)
-    return api
+url_len = get_url_len()
+api = get_api()
 
 
 def get_history():
@@ -52,7 +28,7 @@ def days_old(item):
     return (now - datetime.date(item[0], item[1], item[2])).days
 
 
-def get_text(obj, url_len):
+def get_text(obj):
     member = obj.member
     if type(obj) == Bill:
         text = f"{member.name} introduced {obj}"
@@ -61,8 +37,9 @@ def get_text(obj, url_len):
     elif type(obj) == Vote:
         has_bill = type(obj.bill) == Bill
         text = f"{member.name} {obj}"
-        if len(text) > max_tweet_len - url_len * has_bill:
-            text = text[:max_tweet_len - url_len * has_bill - len(obj.result) - 4] + '...'
+        max_text_len = max_tweet_len - 9 - len(obj.result) - url_len * has_bill
+        if len(text) > max_text_len:
+            text = text[:max_text_len - 3] + '...'
     return text
 
 
@@ -85,48 +62,42 @@ def update_tweet_history(tweet_text):
         json.dump({"data": combined}, f, indent=2)
 
 
-def update_status(item, api, url_len):
+def update_status(item, text):
     """
     Posts the tweet
     """
-    text = get_text(item, url_len)
     if type(item) == Bill:
         tweet = text + f'\n{item.govtrack_url}'
         api.update_status(tweet)
     elif type(item) == Vote:
         has_bill = type(item.bill) == Bill
-        tweet = text + f'\n{item.result}'
+        tweet = text + f'\nResult: {item.result}'
         if has_bill:
             tweet += f"\n{item.bill.govtrack_url}"
         api.update_status(tweet)
 
 
-def get_data_and_tweet(member, api, url_len):
+def get_data_and_tweet(member):
     """
     Gets the member's votes and bills, tweets them if they haven't been tweeted already
     """
     member_tweets = 0
-    data = [item for item in get_bills(member) + get_votes(member) if days_old(item) < days_old_limit]
+    data = [item for item in member.get_bills() + member.get_votes() if days_old(item) < days_old_limit]
     for item in data:
         tweets = [tweet[0] for tweet in get_history()]
-        if get_text(item, url_len) not in tweets:
-            update_status(item, api, url_len)
-            update_tweet_history(get_text(item, url_len))
+        text = get_text(item)
+        if text not in tweets:
+            update_status(item, text)
+            update_tweet_history(text)
             member_tweets += 1
     return member_tweets
 
 
 def main():
-    url_len = get_url_len()
-    api = get_api()
     members = get_senators()
     if include_rep:
         members += get_rep()
-    # initialize_tweet_cache(members)
-    # while True:
-    total_tweets = 0
-    for member in members:
-        total_tweets += get_data_and_tweet(member, api, url_len)
+    total_tweets = sum([get_data_and_tweet(member) for member in members])
     print(f"Done. Posted {total_tweets} new tweet{'s' * (total_tweets != 1)}.")
 
 
