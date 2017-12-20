@@ -1,5 +1,5 @@
 import requests
-from config import state, district, propublica_header, twitter_config
+from config import state, propublica_header, twitter_config
 import datetime
 import tweepy
 from requests_oauthlib import OAuth1
@@ -115,15 +115,8 @@ class Vote:
         return Bill(member, bill_data)
 
 
-# def get_bill_by_id(member, id):
-#     bill_id, congress = id.split('-')
-#     bill_data = requests.get(f"https://api.propublica.org/congress/v1/{congress}/bills/{bill_id}.json",
-#                              headers=propublica_header).json()['results'][0]
-#     return Bill(member, bill_data)
-
-
 # find congresspeople
-def get_rep():
+def get_rep(district):
     rep_data = requests.get(f"https://api.propublica.org/congress/v1/members/house/{state}/{district}/current.json",
                             headers=propublica_header).json()['results'][0]
     return [Member(rep_data)]

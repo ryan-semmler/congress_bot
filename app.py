@@ -1,12 +1,10 @@
 from get_data import get_rep, get_senators, Bill, Vote, get_api, get_url_len
+from config import days_old_limit, max_tweet_len, include_rep
 import datetime
 import time
 import json
 
 
-days_old_limit = 4
-max_tweet_len = 280
-include_rep = True
 url_len = get_url_len()
 api = get_api()
 
@@ -96,7 +94,8 @@ def get_data_and_tweet(member):
 def main():
     members = get_senators()
     if include_rep:
-        members += get_rep()
+        from config import district
+        members += get_rep(district)
     total_tweets = sum([get_data_and_tweet(member) for member in members])
     print(f"Done. Posted {total_tweets} new tweet{'s' * (total_tweets != 1)}.")
 
