@@ -29,7 +29,7 @@ def days_old(item):
 def get_text(obj):
     member = obj.member
     if type(obj) == Bill:
-        text = f"{member.name} introduced {obj}"
+        text = f"{member.name} {('introduced', 'cosponsored')[obj.cosponsored]} {obj}"
         if len(text) > max_tweet_len - url_len - 1:
             text = text[:max_tweet_len - url_len - 3] + '...'
     elif type(obj) == Vote:

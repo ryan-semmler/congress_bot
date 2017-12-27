@@ -45,11 +45,17 @@ class Member:
     def get_bills(self):
         bill_data = requests.get(f"https://api.propublica.org/congress/v1/members/{self.id}/bills/"
                                  "introduced.json", headers=propublica_header).json()['results'][0]['bills']
-        return [Bill(self, data) for data in bill_data]
+        bills = [Bill(self, data) for data in bill_data]
+
+        cosponsored_bill_data = requests.get(
+            f"https://api.propublica.org/congress/v1/members/{self.id}/bills/cosponsored.json",
+            headers=propublica_header).json()['results'][0]['bills']
+        cosponsored_bills = [Bill(self, data, cosponsored=True) for data in cosponsored_bill_data]
+        return bills + cosponsored_bills
 
 
 class Bill:
-    def __init__(self, member, data):
+    def __init__(self, member, data, cosponsored=False):
         self.member = member
         self.number = data['number']
         self.id = data['bill_id']
@@ -60,6 +66,7 @@ class Bill:
         year, month, day = [int(thing) for thing in data['introduced_date'].split('-')]
         self.date = datetime.date(year, month, day)
         self.subject = data['primary_subject']
+        self.cosponsored = cosponsored
 
     def __repr__(self):
         return f"{self.number}: {self.short_title}"
