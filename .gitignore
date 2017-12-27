@@ -4,7 +4,7 @@ config.py
 .DS_Store
 .idea/
 __pycache__
-tweet_history.json
+tweet_history.py
 certifi/
 certifi-2017.11.5.dist-info/
 chardet/

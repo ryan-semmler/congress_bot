@@ -1,5 +1,7 @@
 import tweepy
-from config import twitter_config, handle
+from config import twitter_config, handle, days_old_limit
+import time
+import datetime
 
 
 def get_api():
@@ -17,8 +19,10 @@ api = get_api()
 
 def delete_tweets(handle):
     total = 0
+    date = time.localtime()
+    now = datetime.date(date.tm_year, date.tm_mon, date.tm_mday)
     while True:
-        tweets = api.user_timeline(handle)
+        tweets = [post for post in api.user_timeline(handle) if (now - post.created_at.date()).days <= days_old_limit]
         total += len(tweets)
         if not tweets:
             break
@@ -28,6 +32,7 @@ def delete_tweets(handle):
 
 
 if __name__ == '__main__':
-    response = input("If you continue, all tweets from your twitter account will be deleted. Continue? (y/N): ")
+    response = input(f"If you continue, all tweets from the last {days_old_limit} day{'s' * (days_old_limit != 1)} "
+                     f"will be deleted. Continue? (y/N): ")
     if 'y' in response.lower():
         delete_tweets(handle)

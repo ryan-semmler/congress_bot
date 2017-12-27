@@ -51,7 +51,7 @@ class Member:
             f"https://api.propublica.org/congress/v1/members/{self.id}/bills/cosponsored.json",
             headers=propublica_header).json()['results'][0]['bills']
         cosponsored_bills = [Bill(self, data, cosponsored=True) for data in cosponsored_bill_data]
-        return bills + cosponsored_bills
+        return sorted(bills + cosponsored_bills, key=lambda x: x.date)
 
 
 class Bill:
@@ -158,15 +158,4 @@ if __name__ == '__main__':
     vote = thom.get_votes()[0]
     from app import days_old
 
-    new_vote_data = {'member_id': 'T000476', 'chamber': 'Senate', 'congress': '115', 'session': '1', 'roll_call': '280',
-                     'vote_uri': 'https://api.propublica.org/congress/v1/115/senate/sessions/1/votes/280.json',
-                     'bill': {'bill_id': 's2126-115', 'number': 'PN875', 'api_uri': None, 'title': None,
-                              'latest_action': None}, 'amendment': {},
-                     'nomination': {'nomination_id': 'PN875-115', 'number': 'PN875', 'name': 'Donald C. Coggins Jr.',
-                                    'agency': 'The Judiciary'},
-                     'description': 'Donald C. Coggins, Jr., of South Carolina, to be United States District Judge for the District of South Carolina',
-                     'question': 'On the Nomination', 'result': 'Nomination Confirmed', 'date': '2017-11-16',
-                     'time': '13:48:00', 'total': {'yes': 96, 'no': 0, 'present': 0, 'not_voting': 4},
-                     'position': 'Yes'}
-    new_vote = Vote(thom, new_vote_data)
     pdb.set_trace()
