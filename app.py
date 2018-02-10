@@ -12,18 +12,19 @@ api = get_api()
 def days_old(item):
     date = time.localtime()
     now = datetime.date(date.tm_year, date.tm_mon, date.tm_mday)
-    if type(item) in (Vote, Bill):
+    try:
         return (now - item.date).days
-    return (now - item).days
+    except AttributeError:
+        return (now - item).days
 
 
 def get_text(obj):
     member = obj.member
-    if type(obj) == Bill:
+    if isinstance(obj, Bill):
         text = f"{member.name} {('introduced', 'cosponsored')[obj.cosponsored]} {obj}"
         if len(text) > max_tweet_len - url_len - 1:
             text = text[:max_tweet_len - url_len - 3] + '...'
-    elif type(obj) == Vote:
+    elif isinstance(obj, Vote):
         has_bill = type(obj.bill) == Bill
         text = f"{member.name} {obj}"
         max_text_len = max_tweet_len - 9 - len(obj.result) - url_len * has_bill
@@ -57,23 +58,25 @@ def get_data_and_tweet(member, history):
         text = get_text(item)
         if text not in tweets:
             update_status(item, text)
-            history += [text, item.date]
+            history.append((text, item.date))
     return history
 
 
 def main():
     members = get_senators()
     if include_rep:
-        from config import district
-        members += get_rep(district)
-    from tweet_history import history
+        members += get_rep()
+    try:
+        from tweet_history import history
+    except:
+        history = []
     old_tweets = len(history)
     for member in members:
         history = get_data_and_tweet(member, history)
     total_tweets = len(history) - old_tweets
     history = [item for item in history if days_old(item[1]) <= days_old_limit]
     with open('tweet_history.py', 'w') as f:
-        f.write(f"import datetime\n\nhistory = {pprint.pformat(history, width=120)}")
+        f.write(f"import datetime\n\n\nhistory = {pprint.pformat(history, width=110)}")
     print(f"Done. Posted {total_tweets} new tweet{'s' * (total_tweets != 1)}.")
 
 

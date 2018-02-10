@@ -1,5 +1,5 @@
 import requests
-from config import state, propublica_header, twitter_config
+from config import state, district, propublica_header, twitter_config
 import datetime
 import tweepy
 from requests_oauthlib import OAuth1
@@ -51,7 +51,7 @@ class Member:
             f"https://api.propublica.org/congress/v1/members/{self.id}/bills/cosponsored.json",
             headers=propublica_header).json()['results'][0]['bills']
         cosponsored_bills = [Bill(self, data, cosponsored=True) for data in cosponsored_bill_data]
-        return sorted(bills + cosponsored_bills, key=lambda x: x.date)
+        return sorted(bills + cosponsored_bills, key=lambda x: x.date)[::-1]
 
 
 class Bill:
@@ -95,7 +95,8 @@ class Vote:
         self.date = datetime.date(year, month, day)
         self.position = data['position'].lower()
         self.for_passage = 'pass' in self.question.lower()
-        self.include = any([word in self.question.lower() for word in ("pass", "agree", "nomination", "resolution")])
+        self.include = any([word in self.question.lower() for word in ("pass", "agree", "nomination",
+                                                                       "resolution", "providing for consideration")])
 
     def __repr__(self):
         connector = ' '
@@ -123,7 +124,7 @@ class Vote:
 
 
 # find congresspeople
-def get_rep(district):
+def get_rep():
     rep_data = requests.get(f"https://api.propublica.org/congress/v1/members/house/{state}/{district}/current.json",
                             headers=propublica_header).json()['results'][0]
     return [Member(rep_data)]
@@ -156,6 +157,7 @@ if __name__ == '__main__':
     bill = thom.get_bills()[0]
     votes = thom.get_votes()
     vote = thom.get_votes()[0]
+    rep = get_rep()
     from app import days_old
 
     pdb.set_trace()
