@@ -28,7 +28,7 @@ class Member:
         dist = ''
         if hasattr(self, 'district'):
             dist += f' District {self.district}'
-        return f"{self.title} {self.first_name} {self.last_name}, {self.state}{dist}"
+        return f"{self.title} {self.first_name} {self.last_name} ({self.party}), {self.state}{dist}"
 
     def __str__(self):
         return self.__repr__()
@@ -95,7 +95,7 @@ class Vote:
         self.date = datetime.date(year, month, day)
         self.position = data['position'].lower()
         self.for_passage = 'pass' in self.question.lower()
-        self.include = any([word in self.question.lower() for word in ("pass", "agree", "nomination",
+        self.include = any([word in self.question.lower() for word in ("pass", "agree", "nomination", "approv",
                                                                        "resolution", "providing for consideration")])
 
     def __repr__(self):

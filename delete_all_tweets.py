@@ -36,3 +36,5 @@ if __name__ == '__main__':
                      f"will be deleted. Continue? (y/N): ")
     if 'y' in response.lower():
         delete_tweets(handle)
+    else:
+        print("Cancelled. Did not delete tweets.")
