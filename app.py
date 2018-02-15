@@ -8,6 +8,11 @@ import pprint
 url_len = get_url_len()
 api = get_api()
 
+# TODO combine text-adding features of get_text and update_status
+# TODO debug get_text allowing tweets too long for api
+# TODO straighten out var names. is 'obj' same as 'item'?
+# TODO work out which tweets should be allowed through. Which votes should be excluded?
+
 
 def days_old(item):
     date = time.localtime()
@@ -25,7 +30,7 @@ def get_text(obj):
         if len(text) > max_tweet_len - url_len - 1:
             text = text[:max_tweet_len - url_len - 3] + '...'
     elif isinstance(obj, Vote):
-        has_bill = type(obj.bill) == Bill
+        has_bill = isinstance(obj.bill, Bill)
         text = f"{member.name} {obj}"
         max_text_len = max_tweet_len - 9 - len(obj.result) - url_len * has_bill
         if len(text) > max_text_len:
@@ -37,24 +42,23 @@ def update_status(item, text):
     """
     Posts the tweet
     """
-    if type(item) == Bill:
+    if isinstance(item, Bill):
         tweet = text + f'\n{item.govtrack_url}'
-        api.update_status(tweet)
-    elif type(item) == Vote:
-        has_bill = type(item.bill) == Bill
+    elif isinstance(item, Vote):
+        has_bill = isinstance(item.bill, Bill)
         tweet = text + f'\nResult: {item.result}'
         if has_bill:
             tweet += f"\n{item.bill.govtrack_url}"
-        api.update_status(tweet)
+        print(tweet, len(tweet))
+    api.update_status(tweet)
 
 
-def get_data_and_tweet(member, history):
+def get_data_and_tweet(member, history, tweets):
     """
     Gets the member's votes and bills, tweets them if they haven't been tweeted already
     """
     data = [item for item in member.get_bills() + member.get_votes() if days_old(item) <= days_old_limit]
     for item in data:
-        tweets = [tweet[0] for tweet in history]
         text = get_text(item)
         if text not in tweets:
             update_status(item, text)
@@ -71,8 +75,9 @@ def main():
     except:
         history = []
     old_tweets = len(history)
+    tweets = [tweet[0] for tweet in history]
     for member in members:
-        history = get_data_and_tweet(member, history)
+        history = get_data_and_tweet(member, history, tweets)
     total_tweets = len(history) - old_tweets
     history = [item for item in history if days_old(item[1]) <= days_old_limit]
     with open('tweet_history.py', 'w') as f:
