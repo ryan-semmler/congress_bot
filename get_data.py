@@ -102,6 +102,8 @@ class Vote:
         connector = ' '
         if 'to' not in self.description[:2].lower():
             connector += 'on '
+        else:
+            self.description = self.description[:2].lower() + self.description[2:]
         if 'Act' in self.description.split(',')[0]:
             connector += 'the '
         if 'not' in self.position:
