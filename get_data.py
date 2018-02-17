@@ -5,6 +5,8 @@ import tweepy
 from requests_oauthlib import OAuth1
 import pdb
 
+# TODO work out which tweets should be allowed through. Which votes should be excluded?
+
 
 class Member:
     def __init__(self, data):
@@ -95,8 +97,9 @@ class Vote:
         self.date = datetime.date(year, month, day)
         self.position = data['position'].lower()
         self.for_passage = 'pass' in self.question.lower()
-        self.include = any([word in self.question.lower() for word in ("pass", "agree", "nomination", "approv",
-                                                                       "resolution", "providing for consideration")])
+        self.include = True
+        # self.include = any([word in self.question.lower() for word in ("pass", "agree", "nomination", "approv",
+        #                                                                "resolution", "providing for consideration")])
 
     def __repr__(self):
         connector = ' '

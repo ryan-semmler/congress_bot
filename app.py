@@ -8,11 +8,6 @@ import pprint
 url_len = get_url_len()
 api = get_api()
 
-# TODO combine text-adding features of get_text and update_status
-# TODO debug get_text allowing tweets too long for api
-# TODO straighten out var names. is 'obj' same as 'item'?
-# TODO work out which tweets should be allowed through. Which votes should be excluded?
-
 
 def days_old(item):
     date = time.localtime()
@@ -23,34 +18,26 @@ def days_old(item):
         return (now - item).days
 
 
-def get_text(obj):
-    member = obj.member
-    if isinstance(obj, Bill):
-        text = f"{member.name} {('introduced', 'cosponsored')[obj.cosponsored]} {obj}"
-        if len(text) > max_tweet_len - url_len - 1:
-            text = text[:max_tweet_len - url_len - 3] + '...'
-    elif isinstance(obj, Vote):
-        has_bill = isinstance(obj.bill, Bill)
-        text = f"{member.name} {obj}"
-        max_text_len = max_tweet_len - 9 - len(obj.result) - url_len * has_bill
-        if len(text) > max_text_len:
-            text = text[:max_text_len - 3] + '...'
-    return text
-
-
-def update_status(item, text):
+def get_tweet_text(item):
     """
-    Posts the tweet
+    Puts together the text of the tweet
     """
+    member = item.member
     if isinstance(item, Bill):
+        text = f"{member.name} {('introduced', 'cosponsored')[item.cosponsored]} {item}"
+        if len(text) > max_tweet_len - url_len - 1:
+            text = text[:max_tweet_len - url_len - 4] + '...'
         tweet = text + f'\n{item.govtrack_url}'
     elif isinstance(item, Vote):
         has_bill = isinstance(item.bill, Bill)
+        text = f"{member.name} {item}"
+        max_text_len = max_tweet_len - 9 - len(item.result) - (url_len + 1) * has_bill
+        if len(text) > max_text_len:
+            text = text[:max_text_len - 4] + '...'
         tweet = text + f'\nResult: {item.result}'
         if has_bill:
             tweet += f"\n{item.bill.govtrack_url}"
-        print(tweet, len(tweet))
-    api.update_status(tweet)
+    return tweet
 
 
 def get_data_and_tweet(member, history, tweets):
@@ -59,9 +46,9 @@ def get_data_and_tweet(member, history, tweets):
     """
     data = [item for item in member.get_bills() + member.get_votes() if days_old(item) <= days_old_limit]
     for item in data:
-        text = get_text(item)
+        text = get_tweet_text(item)
         if text not in tweets:
-            update_status(item, text)
+            api.update_status(text)
             history.append((text, item.date))
     return history
 
