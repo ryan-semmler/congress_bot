@@ -5,8 +5,6 @@ import tweepy
 from requests_oauthlib import OAuth1
 import pdb
 
-# TODO work out which tweets should be allowed through. Which votes should be excluded?
-
 
 class Member:
     def __init__(self, data):
@@ -42,7 +40,7 @@ class Member:
         vote_data = requests.get(f"https://api.propublica.org/congress/v1/members/{self.id}/votes.json",
                                  headers=propublica_header).json()['results'][0]['votes']
         all_votes = [Vote(self, data) for data in vote_data]
-        return [vote for vote in all_votes if vote.include][::-1]
+        return [vote for vote in all_votes if vote.include][::-1]  # oldest first
 
     def get_bills(self):
         bill_data = requests.get(f"https://api.propublica.org/congress/v1/members/{self.id}/bills/"
@@ -53,7 +51,7 @@ class Member:
             f"https://api.propublica.org/congress/v1/members/{self.id}/bills/cosponsored.json",
             headers=propublica_header).json()['results'][0]['bills']
         cosponsored_bills = [Bill(self, data, cosponsored=True) for data in cosponsored_bill_data]
-        return sorted(bills + cosponsored_bills, key=lambda x: x.date)[::-1]
+        return sorted(bills + cosponsored_bills, key=lambda x: x.date)  # oldest first
 
 
 class Bill:
@@ -97,9 +95,10 @@ class Vote:
         self.date = datetime.date(year, month, day)
         self.position = data['position'].lower()
         self.for_passage = 'pass' in self.question.lower()
-        self.include = True
-        # self.include = any([word in self.question.lower() for word in ("pass", "agree", "nomination", "approv",
-        #                                                                "resolution", "providing for consideration")])
+
+        # allows "on agreeing to the resolution", "agree, as amended", not "agreeing to the amendment"
+        self.include = any([word in self.question.lower() for word in ("pass", "on agreeing", "agree,", "nomination",
+                                                                       "resolution", "providing for consideration")])
 
     def __repr__(self):
         connector = ' '
@@ -162,7 +161,9 @@ if __name__ == '__main__':
     bill = thom.get_bills()[0]
     votes = thom.get_votes()
     vote = thom.get_votes()[0]
-    rep = get_rep()
+    rep = get_rep()[0]
     from app import days_old
+    from pprint import pprint
+
 
     pdb.set_trace()

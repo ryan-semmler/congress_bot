@@ -28,7 +28,7 @@ def delete_tweets(handle):
             break
         for tweet in tweets:
             api.destroy_status(tweet.id)
-    print(f"Deleted {total} tweet" + "s" * (total != 1))
+    print(f"Deleted {total} tweet{'s' * (total != 1)}")
 
 
 if __name__ == '__main__':
