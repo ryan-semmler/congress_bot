@@ -7,15 +7,17 @@ import pprint
 
 url_len = get_url_len()
 api = get_api()
+date = time.localtime()
+now = datetime.date(date.tm_year, date.tm_mon, date.tm_mday)
 
 
-def days_old(item):
-    date = time.localtime()
-    now = datetime.date(date.tm_year, date.tm_mon, date.tm_mday)
-    try:
-        return (now - item.date).days
-    except AttributeError:
-        return (now - item).days
+# def days_old(item):
+#     date = time.localtime()
+#     now = datetime.date(date.tm_year, date.tm_mon, date.tm_mday)
+#     try:
+#         return (now - item.date).days
+#     except AttributeError:
+#         return (now - item).days
 
 
 def get_tweet_text(item):
@@ -44,7 +46,7 @@ def get_data_and_tweet(member, history, tweets):
     """
     Gets the member's votes and bills, tweets them if they haven't been tweeted already
     """
-    data = [item for item in member.get_bills() + member.get_votes() if days_old(item) <= days_old_limit]
+    data = [item for item in member.get_bills() + member.get_votes(now) if days_old(item) <= days_old_limit]
     for item in data:
         text = get_tweet_text(item)
         if text not in tweets:

@@ -1,9 +1,8 @@
 import requests
-from config import state, district, propublica_header, twitter_config
-import datetime
+from config import state, district, propublica_header, twitter_config, days_old_limit
+from datetime import date
 import tweepy
 from requests_oauthlib import OAuth1
-import pdb
 
 
 class Member:
@@ -36,13 +35,16 @@ class Member:
     def __eq__(self, other):
         return self.name == other.name
 
-    def get_votes(self):
+    def get_votes(self, now):
         vote_data = requests.get(f"https://api.propublica.org/congress/v1/members/{self.id}/votes.json",
                                  headers=propublica_header).json()['results'][0]['votes']
+        # recent_vote_data = [vote for vote in vote_data if
+        #                     (now - date(*[int(num) for num in vote['date'].split('-')])).days <= days_old_limit]
         all_votes = [Vote(self, data) for data in vote_data]
-        return [vote for vote in all_votes if vote.include][::-1]  # oldest first
+        recent_votes = [vote for vote in all_votes if (now - vote.date).days <= days_old_limit]
+        return [vote for vote in recent_votes if vote.include][::-1]  # oldest first
 
-    def get_bills(self):
+    def get_bills(self, now):
         bill_data = requests.get(f"https://api.propublica.org/congress/v1/members/{self.id}/bills/"
                                  "introduced.json", headers=propublica_header).json()['results'][0]['bills']
         bills = [Bill(self, data) for data in bill_data]
@@ -51,7 +53,8 @@ class Member:
             f"https://api.propublica.org/congress/v1/members/{self.id}/bills/cosponsored.json",
             headers=propublica_header).json()['results'][0]['bills']
         cosponsored_bills = [Bill(self, data, cosponsored=True) for data in cosponsored_bill_data]
-        return sorted(bills + cosponsored_bills, key=lambda x: x.date)  # oldest first
+        all_recent_bills = [bill for bill in bills + cosponsored_bills if (now - bill.date).days <= days_old_limit]
+        return sorted(all_recent_bills, key=lambda x: x.date)  # oldest first
 
 
 class Bill:
@@ -64,7 +67,7 @@ class Bill:
         self.url = data['congressdotgov_url']
         self.govtrack_url = data['govtrack_url']
         year, month, day = [int(thing) for thing in data['introduced_date'].split('-')]
-        self.date = datetime.date(year, month, day)
+        self.date = date(year, month, day)
         self.subject = data['primary_subject']
         self.cosponsored = cosponsored
 
@@ -92,7 +95,7 @@ class Vote:
         self.question = data['question']
         self.result = data['result']
         year, month, day = [int(thing) for thing in data['date'].split('-')]
-        self.date = datetime.date(year, month, day)
+        self.date = date(year, month, day)
         self.position = data['position'].lower()
         self.for_passage = 'pass' in self.question.lower()
 
@@ -155,15 +158,20 @@ def get_url_len():
 
 
 if __name__ == '__main__':
+    import time
+    cur_time = time.localtime()
+    now = date(cur_time.tm_year, cur_time.tm_mon, cur_time.tm_mday)
     senators = get_senators()
     thom = senators[0]
-    bills = thom.get_bills()
-    bill = thom.get_bills()[0]
-    votes = thom.get_votes()
-    vote = thom.get_votes()[0]
+    bills = thom.get_bills(now)
+    if bills:
+        bill = bills[0]
+    votes = thom.get_votes(now)
+    if votes:
+        vote = votes[0] or []
     rep = get_rep()[0]
-    from app import days_old
+    # from app import days_old
     from pprint import pprint
 
-
+    import pdb
     pdb.set_trace()
