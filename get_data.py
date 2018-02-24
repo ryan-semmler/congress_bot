@@ -161,11 +161,11 @@ if __name__ == '__main__':
     cur_time = time.localtime()
     now = date(cur_time.tm_year, cur_time.tm_mon, cur_time.tm_mday)
     senators = get_senators()
-    thom = senators[0]
-    bills = thom.get_bills(now)
+    senator = senators[0]
+    bills = senator.get_bills(now)
     if bills:
         bill = bills[0]
-    votes = thom.get_votes(now)
+    votes = senator.get_votes(now)
     if votes:
         vote = votes[0] or []
     rep = get_rep()[0]
