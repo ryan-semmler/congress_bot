@@ -170,7 +170,6 @@ if __name__ == '__main__':
     if votes:
         vote = votes[0] or []
     rep = get_rep()[0]
-    # from app import days_old
     from pprint import pprint
 
     import pdb
