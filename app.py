@@ -37,7 +37,7 @@ def get_data_and_tweet(member, history, tweets):
     """
     Gets the member's votes and bills, tweets them if they haven't been tweeted already
     """
-    data = [item for item in member.get_bills(now) + member.get_votes(now)]
+    data = sorted([item for item in member.get_bills(now) + member.get_votes(now)], key=lambda x: x.date)
     for item in data:
         text = get_tweet_text(item)
         if text not in tweets:
@@ -52,14 +52,14 @@ def main():
         members += get_rep()
     try:
         from tweet_history import history
-    except:
+    except ModuleNotFoundError:
         history = []
     old_tweets = len(history)
     tweets = [tweet[0] for tweet in history]
     for member in members:
         history = get_data_and_tweet(member, history, tweets)
     total_tweets = len(history) - old_tweets
-    history = [item for item in history if days_old(item[1]) <= days_old_limit]
+    history = [item for item in history if (now - item[1]).days <= days_old_limit]
     with open('tweet_history.py', 'w') as f:
         f.write(f"import datetime\n\n\nhistory = {pprint.pformat(history, width=110)}")
     print(f"Done. Posted {total_tweets} new tweet{'s' * (total_tweets != 1)}.")

@@ -42,7 +42,7 @@ class Member:
         #                     (now - date(*[int(num) for num in vote['date'].split('-')])).days <= days_old_limit]
         all_votes = [Vote(self, data) for data in vote_data]
         recent_votes = [vote for vote in all_votes if (now - vote.date).days <= days_old_limit]
-        return [vote for vote in recent_votes if vote.include][::-1]  # oldest first
+        return [vote for vote in recent_votes if vote.include]
 
     def get_bills(self, now):
         bill_data = requests.get(f"https://api.propublica.org/congress/v1/members/{self.id}/bills/"
@@ -53,8 +53,7 @@ class Member:
             f"https://api.propublica.org/congress/v1/members/{self.id}/bills/cosponsored.json",
             headers=propublica_header).json()['results'][0]['bills']
         cosponsored_bills = [Bill(self, data, cosponsored=True) for data in cosponsored_bill_data]
-        all_recent_bills = [bill for bill in bills + cosponsored_bills if (now - bill.date).days <= days_old_limit]
-        return sorted(all_recent_bills, key=lambda x: x.date)  # oldest first
+        return [bill for bill in bills + cosponsored_bills if (now - bill.date).days <= days_old_limit]
 
 
 class Bill:
