@@ -24,10 +24,10 @@ def get_tweet_text(item):
     elif isinstance(item, Vote):
         has_bill = isinstance(item.bill, Bill)
         text = f"{member.name} {item}"
-        max_text_len = max_tweet_len - 9 - len(item.result) - (url_len + 1) * has_bill
+        max_text_len = max_tweet_len - 2 - len(item.count) - len(item.result) - (url_len + 1) * has_bill
         if len(text) > max_text_len:
             text = text[:max_text_len - 4] + '...'
-        tweet = text + f'\nResult: {item.result}'
+        tweet = text + f"\n{item.result} {item.count}"
         if has_bill:
             tweet += f"\n{item.bill.govtrack_url}"
     return tweet
