@@ -5,7 +5,7 @@ import time
 import pprint
 
 
-url_len = get_url_len()
+max_url_len = get_url_len()
 api = get_api()
 date = time.localtime()
 now = datetime.date(date.tm_year, date.tm_mon, date.tm_mday)
@@ -18,12 +18,17 @@ def get_tweet_text(item):
     member = item.member
     if isinstance(item, Bill):
         text = f"{member.name} {('introduced', 'cosponsored')[item.cosponsored]} {item}"
+        url_len = min(max_url_len, len(item.govtrack_url))
         if len(text) > max_tweet_len - url_len - 1:
             text = text[:max_tweet_len - url_len - 4] + '...'
         tweet = text + f'\n{item.govtrack_url}'
     elif isinstance(item, Vote):
         has_bill = isinstance(item.bill, Bill)
         text = f"{member.name} {item}"
+        if has_bill:
+            url_len = min(max_url_len, len(item.bill.govtrack_url))
+        else:
+            url_len = 0
         max_text_len = max_tweet_len - 2 - len(item.count) - len(item.result) - (url_len + 1) * has_bill
         if len(text) > max_text_len:
             text = text[:max_text_len - 4] + '...'
@@ -52,7 +57,7 @@ def main():
         members += get_rep()
     try:
         from tweet_history import history
-    except ModuleNotFoundError:
+    except:
         history = []
     old_tweets = len(history)
     tweets = [tweet[0] for tweet in history]
