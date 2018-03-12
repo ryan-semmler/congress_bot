@@ -99,9 +99,11 @@ class Vote:
         self.position = data['position'].lower()
         self.for_passage = 'pass' in self.question.lower()
 
-        # allows "on agreeing to the resolution", "agree, as amended", not "agreeing to the amendment"
-        valid_question = any([word in self.question.lower() for word in ("pass", "on agreeing", "agree,", "nomination",
-                                                                       "resolution", "providing for consideration")])
+        valid_question = not any([word in self.question.lower() for word in ("amendment",
+                                                                             "recommit",
+                                                                             "table appeal",
+                                                                             "previous question",
+                                                                             "motion")])
         valid_desc = "providing for consideration" not in self.description.lower()
         self.include = valid_question and valid_desc
 
