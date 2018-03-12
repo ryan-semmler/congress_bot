@@ -28,6 +28,8 @@ def delete_tweets(handle):
             break
         for tweet in tweets:
             api.destroy_status(tweet.id)
+    with open('tweet_history.py', 'w') as f:
+        f.write("import datetime\n\n\nhistory = []")
     print(f"Deleted {total} tweet{'s' * (total != 1)}")
 
 
