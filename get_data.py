@@ -103,7 +103,8 @@ class Vote:
                                                                              "recommit",
                                                                              "table appeal",
                                                                              "previous question",
-                                                                             "motion")])
+                                                                             "motion",
+                                                                             "journal")])
         valid_desc = "providing for consideration" not in self.description.lower()
         self.include = valid_question and valid_desc
 
