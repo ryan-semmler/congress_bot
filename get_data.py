@@ -96,13 +96,8 @@ class Vote:
         self.date = date(year, month, day)
         self.position = data['position'].lower()
         self.for_passage = 'pass' in self.question.lower()
-
-        valid_question = not any([word in self.question.lower() for word in ("amendment",
-                                                                             "recommit",
-                                                                             "table appeal",
-                                                                             "previous question",
-                                                                             "motion",
-                                                                             "journal",
+        valid_question = not any([word in self.question.lower() for word in ("amendment", "recommit", "table appeal",
+                                                                             "previous question", "motion", "journal",
                                                                              "conference")])
         valid_desc = "providing for consideration" not in self.description.lower()
         self.include = valid_question and valid_desc
