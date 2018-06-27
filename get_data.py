@@ -104,7 +104,8 @@ class Vote:
                                                                              "table appeal",
                                                                              "previous question",
                                                                              "motion",
-                                                                             "journal")])
+                                                                             "journal",
+                                                                             "conference")])
         valid_desc = "providing for consideration" not in self.description.lower()
         self.include = valid_question and valid_desc
 
@@ -112,13 +113,13 @@ class Vote:
         connector = ' '
         if 'to' not in self.description[:2].lower():
             connector += 'on '
-        else:
-            self.description = self.description[:2].lower() + self.description[2:]
         if 'Act' in self.description.split(',')[0]:
             connector += 'the '
+        else:
+            self.description = self.description[:2].lower() + self.description[2:]
         if 'not' in self.position:
-            return f"did not vote{connector}{self.description}."
-        return f"voted {self.position}{connector}{self.description}."
+            return f"did not vote{connector}{self.description}{'.' * (not self.description.endswith('.'))}"
+        return f"voted {self.position}{connector}{self.description}{'.' * (not self.description.endswith('.'))}"
 
     def __str__(self):
         return self.__repr__()
@@ -177,5 +178,4 @@ if __name__ == '__main__':
     rep = get_rep()[0]
     from pprint import pprint
 
-    import pdb
-    pdb.set_trace()
+    import pdb; pdb.set_trace()
