@@ -38,8 +38,6 @@ class Member:
     def get_votes(self, now):
         vote_data = requests.get(f"https://api.propublica.org/congress/v1/members/{self.id}/votes.json",
                                  headers=propublica_header).json()['results'][0]['votes']
-        # recent_vote_data = [vote for vote in vote_data if
-        #                     (now - date(*[int(num) for num in vote['date'].split('-')])).days <= days_old_limit]
         all_votes = [Vote(self, data) for data in vote_data]
         recent_votes = [vote for vote in all_votes if (now - vote.date).days <= days_old_limit]
         return [vote for vote in recent_votes if vote.include]
