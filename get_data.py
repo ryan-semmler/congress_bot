@@ -1,11 +1,15 @@
 import requests
 from config import state, district, propublica_header, twitter_config, days_old_limit
 from datetime import date
+import time
 import tweepy
 from requests_oauthlib import OAuth1
 
 
 class Member:
+    localtime = time.localtime()
+    now = date(localtime.tm_year, localtime.tm_mon, localtime.tm_mday)
+
     def __init__(self, data):
         self.id = data['id']
         self.first_name = data['first_name']
@@ -35,14 +39,14 @@ class Member:
     def __eq__(self, other):
         return self.name == other.name
 
-    def get_votes(self, now):
+    def get_votes(self):
         vote_data = requests.get(f"https://api.propublica.org/congress/v1/members/{self.id}/votes.json",
                                  headers=propublica_header).json()['results'][0]['votes']
         all_votes = [Vote(self, data) for data in vote_data]
-        recent_votes = [vote for vote in all_votes if (now - vote.date).days <= days_old_limit]
+        recent_votes = [vote for vote in all_votes if (Member.now - vote.date).days <= days_old_limit]
         return [vote for vote in recent_votes if vote.include]
 
-    def get_bills(self, now):
+    def get_bills(self):
         bill_data = requests.get(f"https://api.propublica.org/congress/v1/members/{self.id}/bills/"
                                  "introduced.json", headers=propublica_header).json()['results'][0]['bills']
         bills = [Bill(self, data) for data in bill_data]
@@ -51,7 +55,7 @@ class Member:
             f"https://api.propublica.org/congress/v1/members/{self.id}/bills/cosponsored.json",
             headers=propublica_header).json()['results'][0]['bills']
         cosponsored_bills = [Bill(self, data, cosponsored=True) for data in cosponsored_bill_data]
-        return [bill for bill in bills + cosponsored_bills if (now - bill.date).days <= days_old_limit]
+        return [bill for bill in bills + cosponsored_bills if (Member.now - bill.date).days <= days_old_limit]
 
 
 class Bill:
@@ -157,15 +161,12 @@ def get_url_len():
 
 
 if __name__ == '__main__':
-    import time
-    cur_time = time.localtime()
-    now = date(cur_time.tm_year, cur_time.tm_mon, cur_time.tm_mday)
     senators = get_senators()
     senator = senators[0]
-    bills = senator.get_bills(now)
+    bills = senator.get_bills()
     if bills:
         bill = bills[0]
-    votes = senator.get_votes(now)
+    votes = senator.get_votes()
     if votes:
         vote = votes[0] or []
     rep = get_rep()[0]

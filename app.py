@@ -1,14 +1,10 @@
-from get_data import get_rep, get_senators, Bill, Vote, get_api, get_url_len
+from get_data import get_rep, get_senators, Member, Bill, get_api, get_url_len
 from config import days_old_limit, max_tweet_len, include_rep
-import datetime
-import time
 import pprint
 
 
 max_url_len = get_url_len()
 api = get_api()
-date = time.localtime()
-now = datetime.date(date.tm_year, date.tm_mon, date.tm_mday)
 
 
 def get_tweet_text(item):
@@ -22,7 +18,7 @@ def get_tweet_text(item):
         if len(text) > max_tweet_len - url_len - 1:
             text = text[:max_tweet_len - url_len - 4] + '...'
         tweet = text + f'\n{item.govtrack_url}'
-    elif isinstance(item, Vote):
+    else:  # if a Vote instance
         has_bill = isinstance(item.bill, Bill)
         text = f"{member.name} {item}"
         if has_bill:
@@ -42,7 +38,7 @@ def get_data_and_tweet(member, history, tweets):
     """
     Gets the member's votes and bills, tweets them if they haven't been tweeted already
     """
-    data = sorted([item for item in member.get_bills(now) + member.get_votes(now)], key=lambda x: x.date)
+    data = sorted([item for item in member.get_bills() + member.get_votes()], key=lambda x: x.date)
     for item in data:
         text = get_tweet_text(item)
         if text not in tweets:
@@ -64,7 +60,7 @@ def main():
     for member in members:
         history = get_data_and_tweet(member, history, tweets)
     total_tweets = len(history) - old_tweets
-    history = [item for item in history if (now - item[1]).days <= days_old_limit]
+    history = [item for item in history if (Member.now - item[1]).days <= days_old_limit]
     with open('tweet_history.py', 'w') as f:
         f.write(f"import datetime\n\n\nhistory = {pprint.pformat(history, width=110)}")
     print(f"Done. Posted {total_tweets} new tweet{'s' * (total_tweets != 1)}.")
