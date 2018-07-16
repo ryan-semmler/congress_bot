@@ -45,11 +45,10 @@ consumer_secret = input("Enter the consumer secret: ")
 access_token = input("Enter the access token: ")
 access_token_secret = input("Enter the access token secret: ")
 
-
 twitter_config = pformat({'consumer_key': consumer_key,
-                  'consumer_secret': consumer_secret,
-                  'access_token': access_token,
-                  'access_token_secret': access_token_secret})
+                          'consumer_secret': consumer_secret,
+                          'access_token': access_token,
+                          'access_token_secret': access_token_secret})
 
 propublica_header = {'X-API-Key': ppublica}
 
