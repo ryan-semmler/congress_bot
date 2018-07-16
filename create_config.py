@@ -20,7 +20,7 @@ max_tweet_len = 280
 
 input("This program will create the configuration file needed to run Congress Bot.\n"
       "Before continuing, make sure you've created a Twitter account and gotten an API key for that account.\n"
-      "You'll need your API key for Twitter and Propublica to continue.\n\nPress ENTER to continue")
+      "You'll need your API keys for Twitter and Propublica to continue.\n\nPress ENTER to continue")
 
 
 def clean(handle):
@@ -44,7 +44,6 @@ consumer_key = input("There are four required keys for the Twitter API: "
 consumer_secret = input("Enter the consumer secret: ")
 access_token = input("Enter the access token: ")
 access_token_secret = input("Enter the access token secret: ")
-
 
 
 twitter_config = pformat({'consumer_key': consumer_key,
