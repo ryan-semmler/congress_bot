@@ -6,3 +6,4 @@ __pycache__
 tweet_history.py
 congress-bot_zipped.zip
 .DS_Store
+bot_env/
