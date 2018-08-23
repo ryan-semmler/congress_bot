@@ -1,5 +1,12 @@
+try:
+    from config import days_old_limit, max_tweet_len, include_rep
+except:
+    from create_config import create_config
+    create_config()
+    from config import days_old_limit, max_tweet_len, include_rep
+
+
 from get_data import get_rep, get_senators, Member, Bill, get_api, get_url_len
-from config import days_old_limit, max_tweet_len, include_rep
 import pprint
 
 
