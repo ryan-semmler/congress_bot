@@ -5,7 +5,7 @@ def clean(handle):
     return handle['@' in handle:]
 
 
-def create_config():
+def create_config(action='close'):
     template = \
     """propublica_header = {}
 
@@ -21,7 +21,7 @@ include_rep = {}
 days_old_limit = 4
 
 max_tweet_len = 280
-    """
+"""
 
     input("This program will create the configuration file needed to run Congress Bot.\n"
           "Before continuing, make sure you've created a Twitter account and gotten an API key for that account.\n"
@@ -56,7 +56,7 @@ max_tweet_len = 280
         f.write(template.format(propublica_header, twitter_config, handle, state,
                                 include_rep))
 
-    input("\nConfig file set up successfully. Press ENTER to close")
+    input(f"\nConfig file set up successfully. Press ENTER to {action}")
 
 
 if __name__ == '__main__':

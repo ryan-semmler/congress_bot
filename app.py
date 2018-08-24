@@ -2,7 +2,7 @@ try:
     from config import days_old_limit, max_tweet_len, include_rep
 except:
     from create_config import create_config
-    create_config()
+    create_config(action='continue')
     from config import days_old_limit, max_tweet_len, include_rep
 
 
