@@ -20,7 +20,7 @@ def get_tweet_text(item):
     """
     member = item.member
     if isinstance(item, Bill):
-        text = f"{member.name} {('introduced', 'cosponsored')[item.cosponsored]} {item}"
+        text = "{} {} {}".format(member.name, ('introduced', 'cosponsored')[item.cosponsored], item)
         url_len = min(max_url_len, len(item.govtrack_url))
         if len(text) > max_tweet_len - url_len - 1:
             text = text[:max_tweet_len - url_len - 4] + '...'
@@ -35,9 +35,9 @@ def get_tweet_text(item):
         max_text_len = max_tweet_len - 2 - len(item.count) - len(item.result) - (url_len + 1) * has_bill
         if len(text) > max_text_len:
             text = text[:max_text_len - 4] + '...'
-        tweet = text + f"\n{item.result} {item.count}"
+        tweet = text + "\n{} {}".format(item.result, item.count)
         if has_bill:
-            tweet += f"\n{item.bill.govtrack_url}"
+            tweet += "\n{}".format(item.bill.govtrack_url)
     return tweet
 
 
@@ -69,8 +69,8 @@ def main():
     total_tweets = len(history) - old_tweets
     history = [item for item in history if (Member.now - item[1]).days <= days_old_limit]
     with open('tweet_history.py', 'w') as f:
-        f.write(f"import datetime\n\n\nhistory = {pprint.pformat(history, width=110)}")
-    print(f"Done. Posted {total_tweets} new tweet{'s' * (total_tweets != 1)}.")
+        f.write("import datetime\n\n\nhistory = {}".format(pprint.pformat(history, width=110)))
+    print("Done. Posted {} new tweet{}.".format(total_tweets, 's' * (total_tweets != 1)))
 
 
 if __name__ == '__main__':

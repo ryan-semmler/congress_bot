@@ -56,7 +56,7 @@ max_tweet_len = 280
         f.write(template.format(propublica_header, twitter_config, handle, state,
                                 include_rep))
 
-    input(f"\nConfig file set up successfully. Press ENTER to {action}")
+    input("\nConfig file set up successfully. Press ENTER to {}".format(action))
 
 
 if __name__ == '__main__':

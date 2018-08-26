@@ -18,12 +18,12 @@ def delete_tweets():
             api.destroy_status(tweet.id)
     with open('tweet_history.py', 'w') as f:
         f.write("import datetime\n\n\nhistory = []")
-    print(f"Deleted {total} tweet{'s' * (total != 1)}")
+    print("Deleted {} tweet{}".format(total, 's' * (total != 1)))
 
 
 if __name__ == '__main__':
-    response = input(f"If you continue, all tweets from the last {days_old_limit} day{'s' * (days_old_limit != 1)} "
-                     f"will be deleted. Continue? (y/N): ")
+    response = input("If you continue, all tweets from the last {} day{} "
+                     "will be deleted. Continue? (y/N): ").format(days_old_limit, 's' * days_old_limit != 1)
     if 'y' in response.lower():
         delete_tweets()
     else:

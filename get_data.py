@@ -30,8 +30,8 @@ class Member:
     def __repr__(self):
         dist = ''
         if hasattr(self, 'district'):
-            dist += f' District {self.district}'
-        return f"{self.title} {self.first_name} {self.last_name} ({self.party}), {self.state}{dist}"
+            dist += ' District {}'.format(self.district)
+        return "{} {} {} ({}), {}{}".format(self.title, self.first_name, self.last_name, self.party, self.state, dist)
 
     def __str__(self):
         return self.__repr__()
@@ -40,19 +40,19 @@ class Member:
         return self.name == other.name
 
     def get_votes(self):
-        vote_data = requests.get(f"https://api.propublica.org/congress/v1/members/{self.id}/votes.json",
+        vote_data = requests.get("https://api.propublica.org/congress/v1/members/{}/votes.json".format(self.id),
                                  headers=propublica_header).json()['results'][0]['votes']
         all_votes = [Vote(self, data) for data in vote_data]
         recent_votes = [vote for vote in all_votes if (Member.now - vote.date).days <= days_old_limit]
         return [vote for vote in recent_votes if vote.include]
 
     def get_bills(self):
-        bill_data = requests.get(f"https://api.propublica.org/congress/v1/members/{self.id}/bills/"
-                                 "introduced.json", headers=propublica_header).json()['results'][0]['bills']
+        bill_data = requests.get("https://api.propublica.org/congress/v1/members/{}/bills/introduced.json".format(
+            self.id), headers=propublica_header).json()['results'][0]['bills']
         bills = [Bill(self, data) for data in bill_data]
 
         cosponsored_bill_data = requests.get(
-            f"https://api.propublica.org/congress/v1/members/{self.id}/bills/cosponsored.json",
+            "https://api.propublica.org/congress/v1/members/{}/bills/cosponsored.json".format(self.id),
             headers=propublica_header).json()['results'][0]['bills']
         cosponsored_bills = [Bill(self, data, cosponsored=True) for data in cosponsored_bill_data]
         return [bill for bill in bills + cosponsored_bills if (Member.now - bill.date).days <= days_old_limit]
@@ -73,7 +73,7 @@ class Bill:
         self.cosponsored = cosponsored
 
     def __repr__(self):
-        return f"{self.number}: {self.short_title}"
+        return "{}: {}".format(self.number, self.short_title)
 
     def __str__(self):
         return self.__repr__()
@@ -95,7 +95,7 @@ class Vote:
         self.description = data['description']
         self.question = data['question']
         self.result = data['result']
-        self.count = f"{data['total']['yes']}–{data['total']['no']}"
+        self.count = "{}–{}".format(data['total']['yes'], data['total']['no'])
         year, month, day = [int(thing) for thing in data['date'].split('-')]
         self.date = date(year, month, day)
         self.position = data['position'].lower()
@@ -115,8 +115,9 @@ class Vote:
         else:
             self.description = self.description[:2].lower() + self.description[2:]
         if 'not' in self.position:
-            return f"did not vote{connector}{self.description}{'.' * (not self.description.endswith('.'))}"
-        return f"voted {self.position}{connector}{self.description}{'.' * (not self.description.endswith('.'))}"
+            return "did not vote{}{}{}".format(connector, self.description, '.' * (not self.description.endswith('.')))
+        return "voted {}{}{}{}".format(self.position, connector, self.description,
+                                       '.' * (not self.description.endswith('.')))
 
     def __str__(self):
         return self.__repr__()
@@ -128,20 +129,20 @@ class Vote:
 
     def get_bill_by_id(self, member, id):
         bill_id, congress = id.split('-')
-        bill_data = requests.get(f"https://api.propublica.org/congress/v1/{congress}/bills/{bill_id}.json",
+        bill_data = requests.get("https://api.propublica.org/congress/v1/{}/bills/{}.json".format(congress, bill_id),
                                  headers=propublica_header).json()['results'][0]
         return Bill(member, bill_data)
 
 
 # find congresspeople
 def get_rep():
-    rep_data = requests.get(f"https://api.propublica.org/congress/v1/members/house/{state}/{district}/current.json",
-                            headers=propublica_header).json()['results'][0]
+    rep_data = requests.get("https://api.propublica.org/congress/v1/members/house/{}/{}/current.json".format(
+        state, district), headers=propublica_header).json()['results'][0]
     return [Member(rep_data)]
 
 
 def get_senators():
-    senators_data = requests.get(f"https://api.propublica.org/congress/v1/members/senate/{state}/current.json",
+    senators_data = requests.get("https://api.propublica.org/congress/v1/members/senate/{}/current.json".format(state),
                                  headers=propublica_header).json()['results']
     return [Member(data) for data in senators_data]
 
