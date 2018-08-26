@@ -24,10 +24,10 @@ def get_tweet_text(item):
         url_len = min(max_url_len, len(item.govtrack_url))
         if len(text) > max_tweet_len - url_len - 1:
             text = text[:max_tweet_len - url_len - 4] + '...'
-        tweet = text + f'\n{item.govtrack_url}'
+        tweet = text + '\n{}'.format(item.govtrack_url)
     else:  # if a Vote instance
         has_bill = isinstance(item.bill, Bill)
-        text = f"{member.name} {item}"
+        text = "{} {}".format(member.name, item)
         if has_bill:
             url_len = min(max_url_len, len(item.bill.govtrack_url))
         else:
