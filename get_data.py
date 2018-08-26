@@ -95,7 +95,7 @@ class Vote:
         self.description = data['description']
         self.question = data['question']
         self.result = data['result']
-        self.count = "{}–{}".format(data['total']['yes'], data['total']['no'])
+        self.count = "{}-{}".format(data['total']['yes'], data['total']['no'])
         year, month, day = [int(thing) for thing in data['date'].split('-')]
         self.date = date(year, month, day)
         self.position = data['position'].lower()
