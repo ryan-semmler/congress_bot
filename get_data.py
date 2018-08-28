@@ -110,10 +110,10 @@ class Vote:
         connector = ' '
         if 'to' not in self.description[:2].lower():
             connector += 'on '
-        if 'Act' in self.description.split(',')[0]:
-            connector += 'the '
-        else:
-            self.description = self.description[:2].lower() + self.description[2:]
+            if 'Act' in self.description.split(',')[0]:
+                connector += 'the '
+            elif 'nomination' not in self.question.lower():
+                self.description = self.description[:1].lower() + self.description[1:]
         if 'not' in self.position:
             return "did not vote{}{}{}".format(connector, self.description, '.' * (not self.description.endswith('.')))
         return "voted {}{}{}{}".format(self.position, connector, self.description,
