@@ -9,16 +9,15 @@ def delete_tweets():
     date = time.localtime()
     now = datetime.date(date.tm_year, date.tm_mon, date.tm_mday)
     api = get_api()
-    while True:
-        tweets = [post for post in api.user_timeline(handle) if (now - post.created_at.date()).days <= days_old_limit]
+    tweets = [post for post in api.user_timeline(handle) if (now - post.created_at.date()).days <= days_old_limit]
+    while tweets:
         total += len(tweets)
-        if not tweets:
-            break
         for tweet in tweets:
             api.destroy_status(tweet.id)
+        tweets = [post for post in api.user_timeline(handle) if (now - post.created_at.date()).days <= days_old_limit]
     with open('tweet_history.py', 'w') as f:
         f.write("import datetime\n\n\nhistory = []")
-    print("Deleted {} tweet{}".format(total, 's' * (total != 1)))
+    print("Deleted {} tweet{}.".format(total, 's' * (total != 1)))
 
 
 if __name__ == '__main__':
