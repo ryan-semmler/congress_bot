@@ -23,7 +23,7 @@ def delete_tweets():
 
 if __name__ == '__main__':
     response = input("If you continue, all tweets from the last "
-                     "{} day{} will be deleted. Continue? (y/N): ").format(days_old_limit, 's' * days_old_limit != 1)
+                     "{} day{} will be deleted. Continue? (y/N): ".format(days_old_limit, 's' * (days_old_limit != 1)))
     if 'y' in response.lower():
         delete_tweets()
     else:
