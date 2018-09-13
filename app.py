@@ -25,7 +25,7 @@ def get_tweet_text(item):
         text = "{} {} {}".format(member.name, ('introduced', 'cosponsored')[item.cosponsored], item)
         url_len = min(max_url_len, len(item.govtrack_url))
         if len(text) > max_tweet_len - url_len - 1:
-            text = text[:max_tweet_len - url_len - 4] + '...'
+            text = text[:max_tweet_len - url_len - 2] + '…'
         tweet = text + '\n{}'.format(item.govtrack_url)
     else:  # if a Vote instance
         has_bill = isinstance(item.bill, Bill)
@@ -36,7 +36,7 @@ def get_tweet_text(item):
             url_len = 0
         max_text_len = max_tweet_len - 2 - len(item.count) - len(item.result) - (url_len + 1) * has_bill
         if len(text) > max_text_len:
-            text = text[:max_text_len - 4] + '...'
+            text = text[:max_text_len - 2] + '…'
         tweet = text + "\n{} {}".format(item.result, item.count)
         if has_bill:
             tweet += "\n{}".format(item.bill.govtrack_url)
