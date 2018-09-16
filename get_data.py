@@ -138,7 +138,7 @@ class Vote:
 def get_rep():
     rep_data = requests.get("https://api.propublica.org/congress/v1/members/house/{}/{}/current.json".format(
         state, district), headers=propublica_header).json()['results'][0]
-    return [Member(rep_data)]
+    return Member(rep_data)
 
 
 def get_senators():
@@ -170,7 +170,7 @@ if __name__ == '__main__':
     votes = senator.get_votes()
     if votes:
         vote = votes[0] or []
-    rep = get_rep()[0]
+    rep = get_rep()
     from pprint import pprint
 
     import pdb; pdb.set_trace()
