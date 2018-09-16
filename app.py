@@ -9,9 +9,8 @@ except:
 from get_data import get_rep, get_senators, Member, Bill, get_api, get_url_len
 import pprint
 import time
-import logging
 
-logger = logging.Logger()
+
 max_url_len = get_url_len()
 api = get_api()
 
@@ -59,7 +58,7 @@ def get_data_and_tweet(member, history, tweets):
 def main():
     members = get_senators()
     if include_rep:
-        members += get_rep()
+        members.append(get_rep())
     try:
         from tweet_history import history
     except:
@@ -72,7 +71,10 @@ def main():
     history = [item for item in history if (Member.now - item[1]).days <= days_old_limit]
     with open('tweet_history.py', 'w') as f:
         f.write("import datetime\n\n\nhistory = {}".format(pprint.pformat(history, width=110)))
-    logger.info("Posted {} new tweet{}.".format(total_tweets, 's' * (total_tweets != 1)))
+    if total_tweets:
+        with open('tweet_log.txt', mode='a') as f:
+            f.write("{} >> Posted {} new tweet{}.".format(time.ctime(), total_tweets, 's' * (total_tweets != 1)))
+    print("Done. Posted {} new tweet{}.".format(total_tweets, 's' * (total_tweets != 1)))
 
 
 if __name__ == '__main__':
