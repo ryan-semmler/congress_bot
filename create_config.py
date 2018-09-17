@@ -2,7 +2,7 @@ from pprint import pformat
 
 
 def clean(handle):
-    return handle['@' in handle:]
+    return handle[handle.startswith('@'):]
 
 
 def create_config(action='close'):
@@ -13,14 +13,20 @@ def create_config(action='close'):
 twitter_config = {}
 
 handle = '{}'
+max_tweet_len = 280
 
 state = '{}'
 include_rep = {}
+district = {}
 
 # Bot won't look at data from api older than this or store old tweets longer than this.
 days_old_limit = 4
 
-max_tweet_len = 280
+# Assign True to use govtrack url for bills, False for congress.gov
+use_govtrack = True
+
+# Log output to tweet_log.txt?
+output_to_file = True
 """
 
     input("This program will create the configuration file needed to run Congress Bot.\n"
@@ -30,14 +36,14 @@ max_tweet_len = 280
     handle = clean(input("Enter the bot's twitter handle: "))
     state = input("Enter your state's two-letter abbreviation: ").lower()
 
-    include_rep_raw = 'y' in input("Include House member data in Twitter updates? y/n: ").lower()
-    if include_rep_raw:
-        include_rep = str(include_rep_raw) + "\ndistrict = {}".format(
-            input("Enter the number of the Congressional district used for the bot: "))
+    include_rep = 'y' in input("Include House member data in Twitter updates? y/n: ").lower()
+    if include_rep:
+        district = input("Enter the number of the Congressional district used for the bot: ")
     else:
-        include_rep = include_rep_raw
+        district = None
 
-    ppublica = input('Enter your Propublica API key: ')
+    propublica_header = {'X-API-Key': input('Enter your Propublica API key: ')}
+
     consumer_key = input("There are four required keys for the Twitter API: "
                          "consumer key, consumer secret, access token, and access token secret.\n"
                          "Enter the consumer key: ")
@@ -50,13 +56,13 @@ max_tweet_len = 280
                               'access_token': access_token,
                               'access_token_secret': access_token_secret})
 
-    propublica_header = {'X-API-Key': ppublica}
-
     with open("config.py", 'w') as f:
         f.write(template.format(propublica_header, twitter_config, handle, state,
-                                include_rep))
+                                include_rep, district))
 
-    input("\nConfig file set up successfully. Press ENTER to {}".format(action))
+    input("\nConfig file set up successfully.\n"
+          "Open config.py to manually change other settings.\n"
+          "Press ENTER to {}".format(action))
 
 
 if __name__ == '__main__':
