@@ -1,5 +1,5 @@
 import requests
-from config import state, district, propublica_header, twitter_config, days_old_limit
+from config import state, propublica_header, twitter_config, district, days_old_limit
 from datetime import date
 import time
 import tweepy
@@ -40,6 +40,7 @@ class Member:
         return self.name == other.name
 
     def get_votes(self):
+        """returns list of bills and nominations voted on by the member"""
         vote_data = requests.get("https://api.propublica.org/congress/v1/members/{}/votes.json".format(self.id),
                                  headers=propublica_header).json()['results'][0]['votes']
         all_votes = [Vote(self, data) for data in vote_data]
@@ -47,6 +48,7 @@ class Member:
         return [vote for vote in recent_votes if vote.include]
 
     def get_bills(self):
+        """returns list of bills introduced or cosponsored by the member"""
         bill_data = requests.get("https://api.propublica.org/congress/v1/members/{}/bills/introduced.json".format(
             self.id), headers=propublica_header).json()['results'][0]['bills']
         bills = [Bill(self, data) for data in bill_data]
@@ -136,9 +138,10 @@ class Vote:
 
 # find congresspeople
 def get_rep():
-    rep_data = requests.get("https://api.propublica.org/congress/v1/members/house/{}/{}/current.json".format(
-        state, district), headers=propublica_header).json()['results'][0]
-    return Member(rep_data)
+    if district:
+        rep_data = requests.get("https://api.propublica.org/congress/v1/members/house/{}/{}/current.json".format(
+            state, district), headers=propublica_header).json()['results'][0]
+        return Member(rep_data)
 
 
 def get_senators():
@@ -164,13 +167,13 @@ def get_url_len():
 if __name__ == '__main__':
     senators = get_senators()
     senator = senators[0]
+    rep = get_rep()
     bills = senator.get_bills()
     if bills:
         bill = bills[0]
     votes = senator.get_votes()
     if votes:
-        vote = votes[0] or []
-    rep = get_rep()
+        vote = votes[0]
     from pprint import pprint
 
     import pdb; pdb.set_trace()

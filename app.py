@@ -1,6 +1,6 @@
 try:
-    from config import days_old_limit, max_tweet_len, include_rep
-except:
+    from config import days_old_limit, max_tweet_len, include_rep, output_to_file, use_govtrack
+except ModuleNotFoundError:
     from create_config import create_config
     create_config(action='continue')
     from config import days_old_limit, max_tweet_len, include_rep
@@ -21,16 +21,18 @@ def get_tweet_text(item):
     """
     member = item.member
     if isinstance(item, Bill):
+        url = (item.url, item.govtrack_url)[use_govtrack]
         text = "{} {} {}".format(member.name, ('introduced', 'cosponsored')[item.cosponsored], item)
-        url_len = min(max_url_len, len(item.govtrack_url))
+        url_len = min(max_url_len, len(url))
         if len(text) > max_tweet_len - url_len - 1:
             text = text[:max_tweet_len - url_len - 2] + '…'
-        tweet = text + '\n{}'.format(item.govtrack_url)
+        tweet = text + '\n{}'.format(url)
     else:  # if a Vote instance
         has_bill = isinstance(item.bill, Bill)
         text = "{} {}".format(member.name, item)
         if has_bill:
-            url_len = min(max_url_len, len(item.bill.govtrack_url))
+            url = (item.bill.url, item.bill.govtrack_url)[use_govtrack]
+            url_len = min(max_url_len, len(url))
         else:
             url_len = 0
         max_text_len = max_tweet_len - 2 - len(item.count) - len(item.result) - (url_len + 1) * has_bill
@@ -38,7 +40,7 @@ def get_tweet_text(item):
             text = text[:max_text_len - 2] + '…'
         tweet = text + "\n{} {}".format(item.result, item.count)
         if has_bill:
-            tweet += "\n{}".format(item.bill.govtrack_url)
+            tweet += "\n{}".format(url)
     return tweet
 
 
@@ -46,7 +48,7 @@ def get_data_and_tweet(member, history, tweets):
     """
     Gets the member's votes and bills, tweets them if they haven't been tweeted already
     """
-    data = sorted([item for item in member.get_bills() + member.get_votes()], key=lambda x: x.date)
+    data = sorted(member.get_bills() + member.get_votes(), key=lambda x: x.date)
     for item in data:
         text = get_tweet_text(item)
         if text not in tweets:
@@ -61,7 +63,7 @@ def main():
         members.append(get_rep())
     try:
         from tweet_history import history
-    except:
+    except ModuleNotFoundError:
         history = []
     old_tweets = len(history)
     tweets = [tweet[0] for tweet in history]
@@ -71,7 +73,7 @@ def main():
     history = [item for item in history if (Member.now - item[1]).days <= days_old_limit]
     with open('tweet_history.py', 'w') as f:
         f.write("import datetime\n\n\nhistory = {}".format(pprint.pformat(history, width=110)))
-    if total_tweets:
+    if total_tweets and output_to_file:
         with open('tweet_log.txt', mode='a') as f:
             f.write("{} >> Posted {} new tweet{}.".format(time.ctime(), total_tweets, 's' * (total_tweets != 1)))
     print("Done. Posted {} new tweet{}.".format(total_tweets, 's' * (total_tweets != 1)))
