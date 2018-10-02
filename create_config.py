@@ -25,8 +25,11 @@ days_old_limit = 4
 # Assign True to use govtrack url for bills, False for congress.gov
 use_govtrack = True
 
-# Log output to tweet_log.txt?
+# Log output to tweet_log.txt
 output_to_file = True
+
+# Use members' twitter handles instead of names when possible
+tag_member = False
 """
 
     input("This program will create the configuration file needed to run Congress Bot.\n"

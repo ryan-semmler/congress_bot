@@ -1,12 +1,12 @@
 try:
-    from config import days_old_limit, max_tweet_len, include_rep, output_to_file, use_govtrack
+    from config import days_old_limit, max_tweet_len, output_to_file, use_govtrack, tag_member
 except ModuleNotFoundError:
     from create_config import create_config
     create_config(action='continue')
-    from config import days_old_limit, max_tweet_len, include_rep
+    from config import days_old_limit, max_tweet_len, output_to_file, use_govtrack, tag_member
 
 
-from get_data import get_rep, get_senators, Member, Bill, get_api, get_url_len
+from get_data import get_members, Member, Bill, get_api, get_url_len
 import pprint
 import time
 
@@ -16,20 +16,21 @@ api = get_api()
 
 
 def get_tweet_text(item):
-    """
-    Puts together the text of the tweet
-    """
+    """Puts together the text of the tweet"""
     member = item.member
+    member_name = member.name
+    if tag_member and member.handle:
+        member_name = '.@' + member.handle
     if isinstance(item, Bill):
         url = (item.url, item.govtrack_url)[use_govtrack]
-        text = "{} {} {}".format(member.name, ('introduced', 'cosponsored')[item.cosponsored], item)
+        text = "{} {} {}".format(member_name, ('introduced', 'cosponsored')[item.cosponsored], item)
         url_len = min(max_url_len, len(url))
         if len(text) + url_len + 1 > max_tweet_len:
             text = text[:max_tweet_len - url_len - 3] + '…'
         tweet = text + '\n' + url
     else:  # if a Vote instance
         has_bill = isinstance(item.bill, Bill)
-        text = "{} {}".format(member.name, item)
+        text = "{} {}".format(member_name, item)
         if has_bill:
             url = (item.bill.url, item.bill.govtrack_url)[use_govtrack]
             url_len = min(max_url_len, len(url))
@@ -45,9 +46,7 @@ def get_tweet_text(item):
 
 
 def get_data_and_tweet(member, history, tweets):
-    """
-    Gets the member's votes and bills, tweets them if they haven't been tweeted already
-    """
+    """Gets the member's votes and bills, tweets them if they haven't been tweeted already"""
     data = sorted(member.get_bills() + member.get_votes(), key=lambda x: x.date)
     for item in data:
         text = get_tweet_text(item)
@@ -58,9 +57,7 @@ def get_data_and_tweet(member, history, tweets):
 
 
 def main():
-    members = get_senators()
-    if include_rep:
-        members.append(get_rep())
+    members = get_members()
     try:
         from tweet_history import history
     except ModuleNotFoundError:

@@ -1,5 +1,5 @@
 import requests
-from config import state, propublica_header, twitter_config, district, days_old_limit
+from config import state, include_rep, propublica_header, twitter_config, district, days_old_limit
 from datetime import date
 import time
 import tweepy
@@ -136,18 +136,16 @@ class Vote:
         return Bill(member, bill_data)
 
 
-# find congresspeople
-def get_rep():
-    if district:
-        rep_data = requests.get("https://api.propublica.org/congress/v1/members/house/{}/{}/current.json".format(
-            state, district), headers=propublica_header).json()['results'][0]
-        return Member(rep_data)
-
-
-def get_senators():
+def get_members():
+    """Return Member instances for senators and representative if applicable"""
     senators_data = requests.get("https://api.propublica.org/congress/v1/members/senate/{}/current.json".format(state),
                                  headers=propublica_header).json()['results']
-    return [Member(data) for data in senators_data]
+    senators = [Member(data) for data in senators_data]
+    if include_rep and district:
+        rep_data = requests.get("https://api.propublica.org/congress/v1/members/house/{}/{}/current.json".format(
+                                state, district), headers=propublica_header).json()['results'][0]
+        return senators + [Member(rep_data)]
+    return senators
 
 
 def get_api():
@@ -165,9 +163,11 @@ def get_url_len():
 
 
 if __name__ == '__main__':
-    senators = get_senators()
+    members = get_members()
+    senators = members[:2]
     senator = senators[0]
-    rep = get_rep()
+    if include_rep:
+        rep = members[-1]
     bills = senator.get_bills()
     if bills:
         bill = bills[0]
