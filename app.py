@@ -1,9 +1,9 @@
 try:
-    from config import days_old_limit, max_tweet_len, output_to_file, use_govtrack, tag_member
+    from config import days_old_limit, handle, max_tweet_len, output_to_file, use_govtrack, tag_member
 except ModuleNotFoundError:
     from create_config import create_config
     create_config(action='continue')
-    from config import days_old_limit, max_tweet_len, output_to_file, use_govtrack, tag_member
+    from config import days_old_limit, handle, max_tweet_len, output_to_file, use_govtrack, tag_member
 
 try:
     from tweet_history import history
@@ -83,23 +83,21 @@ def get_data_and_tweet(member):  # , history, tweets):
                 bill_id = item.bill['bill_id']
         if not item_in_history(item):
             text = get_tweet_text(item)
-            tweet = api.update_status(text)
-            tweets += 1
+            if bill_id in history:
+                last_tweet = history[bill_id][-1]
+                tweet = api.update_status(handle + ' ' + text, in_reply_to_status_id=last_tweet['tweet_id'])
+            else:
+                tweet = api.update_status(text)
             update_history(item, tweet.id_str)
-    # return history
+            tweets += 1
 
 
 # TODO selectively remove items from history. keep most recent, but delete others based on days_old_limit
-# TODO add logic to reply to most recent tweet in thread
 
 
 def main():
-    # old_tweets = len(history)
-    # tweets = [tweet[0] for tweet in history]
     for member in get_members():
         get_data_and_tweet(member)
-    # total_tweets = len(history) - old_tweets
-    # history = [item for item in history if (Member.now - item[1]).days <= days_old_limit]
     with open('tweet_history.py', 'w') as f:
         f.write("import datetime\n\n\nhistory = {}".format(pprint.pformat(history, width=110)))
     if tweets and output_to_file:
