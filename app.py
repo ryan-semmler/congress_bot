@@ -10,7 +10,7 @@ try:
 except ModuleNotFoundError:
     history = {}
 
-from get_data import get_members, Bill, get_api, get_url_len
+from get_data import get_members, Member, Bill, get_api, get_url_len
 import pprint
 import time
 
@@ -92,14 +92,23 @@ def get_data_and_tweet(member):  # , history, tweets):
             tweets += 1
 
 
-# TODO selectively remove items from history. keep most recent, but delete others based on days_old_limit
+def remove_old_tweets():
+    for bill in history:
+        last_tweet = [history[bill][-1]]
+        if (Member.now - last_tweet).days > 365:
+            last_tweet = []
+        new_tweets = [tweet for tweet in history[bill][:-1] if (Member.now - tweet['date']).days <= days_old_limit]
+        history[bill] = new_tweets + last_tweet
+        if not history[bill]:
+            del history[bill]
 
 
 def main():
     for member in get_members():
         get_data_and_tweet(member)
     with open('tweet_history.py', 'w') as f:
-        f.write("import datetime\n\n\nhistory = {}".format(pprint.pformat(history, width=110)))
+        remove_old_tweets()
+        f.write("import datetime\n\n\nhistory = {}".format(pprint.pformat(history, width=120)))
     if tweets and output_to_file:
         with open('tweet_log.txt', mode='a') as f:
             f.write("{} >> Posted {} new tweet{}.\n".format(time.ctime(), tweets, 's' * (tweets != 1)))

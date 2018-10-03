@@ -14,7 +14,7 @@ class Member:
         self.id = data['id']
         self.first_name = data['first_name']
         self.last_name = data['last_name']
-        self.name = ' '.join((data['first_name'], data['last_name']))
+        self.name = data['first_name'] + ' ' + data['last_name']
         if 'senator' in data['role'].lower():
             self.chamber = 'Senate'
             self.title = 'Senator'
@@ -69,7 +69,7 @@ class Bill:
         self.short_title = data['short_title']
         self.url = data['congressdotgov_url']
         self.govtrack_url = data['govtrack_url']
-        self.date = date(*map(int, data['date'].split('-')))
+        self.date = date(*map(int, data['introduced_date'].split('-')))
         self.subject = data['primary_subject']
         self.cosponsored = cosponsored
 
