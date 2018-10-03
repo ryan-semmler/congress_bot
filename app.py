@@ -5,14 +5,19 @@ except ModuleNotFoundError:
     create_config(action='continue')
     from config import days_old_limit, max_tweet_len, output_to_file, use_govtrack, tag_member
 
+try:
+    from tweet_history import history
+except ModuleNotFoundError:
+    history = {}
 
-from get_data import get_members, Member, Bill, get_api, get_url_len
+from get_data import get_members, Bill, get_api, get_url_len
 import pprint
 import time
 
 
 max_url_len = get_url_len()
 api = get_api()
+tweets = 0
 
 
 def get_tweet_text(item):
@@ -45,35 +50,62 @@ def get_tweet_text(item):
     return tweet
 
 
-def get_data_and_tweet(member, history, tweets):
+def get_data_and_tweet(member):  # , history, tweets):
     """Gets the member's votes and bills, tweets them if they haven't been tweeted already"""
+    def item_in_history(item):
+        """Determines whether the item has already been tweeted, returns bool"""
+        if bill_id in history:
+            date, obj_type, member = item.date, ('vote', 'bill')[is_bill], item.member.name
+            for tweet in history['bill_id']:
+                if tweet['date'] == date and tweet['type'] == obj_type and tweet['member'] == member:
+                    return True
+        return False
+
+    def update_history(item, tweet_id):
+        item_data = {'date': item.date,
+                     'type': ('vote', 'bill')[is_bill],
+                     'member': item.member.name,
+                     'tweet_id': tweet_id}
+        if bill_id in history:
+            history[bill_id].append(item_data)
+        else:
+            history[bill_id] = [item_data]
+
     data = sorted(member.get_bills() + member.get_votes(), key=lambda x: x.date)
     for item in data:
-        text = get_tweet_text(item)
-        if text not in tweets:
-            api.update_status(text)
-            history.append((text, item.date))
-    return history
+        is_bill = isinstance(item, Bill)
+        if is_bill:
+            bill_id = item.id
+        else:  # if a Vote instance
+            if isinstance(item.bill, Bill):
+                bill_id = item.bill.id
+            else:
+                bill_id = item.bill['bill_id']
+        if not item_in_history(item):
+            text = get_tweet_text(item)
+            tweet = api.update_status(text)
+            tweets += 1
+            update_history(item, tweet.id_str)
+    # return history
+
+
+# TODO selectively remove items from history. keep most recent, but delete others based on days_old_limit
+# TODO add logic to reply to most recent tweet in thread
 
 
 def main():
-    members = get_members()
-    try:
-        from tweet_history import history
-    except ModuleNotFoundError:
-        history = []
-    old_tweets = len(history)
-    tweets = [tweet[0] for tweet in history]
-    for member in members:
-        history = get_data_and_tweet(member, history, tweets)
-    total_tweets = len(history) - old_tweets
-    history = [item for item in history if (Member.now - item[1]).days <= days_old_limit]
+    # old_tweets = len(history)
+    # tweets = [tweet[0] for tweet in history]
+    for member in get_members():
+        get_data_and_tweet(member)
+    # total_tweets = len(history) - old_tweets
+    # history = [item for item in history if (Member.now - item[1]).days <= days_old_limit]
     with open('tweet_history.py', 'w') as f:
         f.write("import datetime\n\n\nhistory = {}".format(pprint.pformat(history, width=110)))
-    if total_tweets and output_to_file:
+    if tweets and output_to_file:
         with open('tweet_log.txt', mode='a') as f:
-            f.write("{} >> Posted {} new tweet{}.\n".format(time.ctime(), total_tweets, 's' * (total_tweets != 1)))
-    print("Done. Posted {} new tweet{}.".format(total_tweets, 's' * (total_tweets != 1)))
+            f.write("{} >> Posted {} new tweet{}.\n".format(time.ctime(), tweets, 's' * (tweets != 1)))
+    print("Done. Posted {} new tweet{}.".format(tweets, 's' * (tweets != 1)))
 
 
 if __name__ == '__main__':

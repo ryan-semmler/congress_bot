@@ -69,8 +69,7 @@ class Bill:
         self.short_title = data['short_title']
         self.url = data['congressdotgov_url']
         self.govtrack_url = data['govtrack_url']
-        year, month, day = [int(thing) for thing in data['introduced_date'].split('-')]
-        self.date = date(year, month, day)
+        self.date = date(*map(int, data['date'].split('-')))
         self.subject = data['primary_subject']
         self.cosponsored = cosponsored
 
@@ -83,7 +82,7 @@ class Bill:
     def __eq__(self, other):
         if type(other) != Bill:
             return False
-        return all((self.id == other.id, self.date == other.date))
+        return self.id == other.id and self.date == other.date
 
 
 class Vote:
@@ -98,8 +97,7 @@ class Vote:
         self.question = data['question']
         self.result = data['result']
         self.count = "{}-{}".format(data['total']['yes'], data['total']['no'])
-        year, month, day = [int(thing) for thing in data['date'].split('-')]
-        self.date = date(year, month, day)
+        self.date = date(*map(int, data['date'].split('-')))
         self.position = data['position'].lower()
         self.for_passage = 'pass' in self.question.lower()
         valid_question = not any([word in self.question.lower() for word in ("amendment", "recommit", "table appeal",
@@ -127,7 +125,7 @@ class Vote:
     def __eq__(self, other):
         if type(other) != Vote:
             return False
-        return all((self.member == other.member, self.bill == other.bill))
+        return self.member == other.member and self.bill == other.bill
 
     def get_bill_by_id(self, member, id):
         bill_id, congress = id.split('-')
