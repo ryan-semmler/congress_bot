@@ -1,5 +1,5 @@
 import requests
-from config import state, include_rep, propublica_header, twitter_config, district, days_old_limit
+from config import state, include_rep, propublica_header, twitter_config, district, days_old_limit, tag_member
 from datetime import date
 import time
 import tweepy
@@ -12,9 +12,13 @@ class Member:
 
     def __init__(self, data):
         self.id = data['id']
+        self.handle = data['twitter_id']
         self.first_name = data['first_name']
         self.last_name = data['last_name']
-        self.name = data['first_name'] + ' ' + data['last_name']
+        if tag_member and self.handle:
+            self.name = '.@' + self.handle
+        else:
+            self.name = data['first_name'] + ' ' + data['last_name']
         if 'senator' in data['role'].lower():
             self.chamber = 'Senate'
             self.title = 'Senator'
@@ -24,7 +28,6 @@ class Member:
             self.title = 'Representative'
         self.state = state.upper()
         self.party = data['party']
-        self.handle = data['twitter_id']
         self.next_election = data['next_election']
 
     def __repr__(self):
