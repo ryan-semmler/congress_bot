@@ -1,13 +1,13 @@
 try:
-    from config import days_old_limit, handle, max_tweet_len, output_to_file, use_govtrack
+    from config import days_old_limit, thread_age_limit, handle, max_tweet_len, output_to_file, use_govtrack
 except ModuleNotFoundError:
     from create_config import create_config
     create_config(action='continue')
-    from config import days_old_limit, handle, max_tweet_len, output_to_file, use_govtrack
+    from config import days_old_limit, thread_age_limit, handle, max_tweet_len, output_to_file, use_govtrack
 
 try:
     from tweet_history import history
-except ModuleNotFoundError:
+except (ModuleNotFoundError, ImportError):
     history = {}
 
 from get_data import get_members, Member, Bill, get_api, get_url_len
@@ -49,19 +49,21 @@ def get_tweet_text(item):
 
 def get_data_and_tweet(member):
     """Gets the member's votes and bills, tweets them if they haven't been tweeted already"""
+
     def item_in_history(item):
         """Determines whether the item has already been tweeted, returns bool"""
         if bill_id in history:
-            date, obj_type, member = item.date, ('vote', 'bill')[is_bill], item.member.last_name  # TODO see ln 64
+            date, obj_type, member = item.date, ('vote', 'bill')[is_bill], item.member.last_name
             for tweet in history[bill_id]:
                 if tweet['date'] == date and tweet['type'] == obj_type and tweet['member'] == member:
                     return True
         return False
 
     def update_history(item, tweet_id):
+        """Adds new tweet to history"""
         item_data = {'date': item.date,
                      'type': ('vote', 'bill')[is_bill],
-                     'member': item.member.last_name,  # TODO change this to member.id? not as readable, but def unique
+                     'member': item.member.last_name,
                      'tweet_id': tweet_id}
         if bill_id in history:
             history[bill_id].append(item_data)
@@ -82,20 +84,18 @@ def get_data_and_tweet(member):
             text = get_tweet_text(item)
             if bill_id in history:
                 last_tweet = history[bill_id][-1]
-                # tweet = api.update_status(handle + ' ' + text, in_reply_to_status_id=last_tweet['tweet_id'])
+                tweet = api.update_status(handle + ' ' + text, in_reply_to_status_id=last_tweet['tweet_id'])
             else:
-                # tweet = api.update_status(text)
-                pass
-            update_history(item, '1234abc')
-            # update_history(item, tweet.id_str)
+                tweet = api.update_status(text)
+            update_history(item, tweet.id_str)
             global tweets
             tweets += 1
-#
+
 
 def remove_old_tweets():
     for bill in history:
         last_tweet = [history[bill][-1]]
-        if (Member.now - last_tweet[0]['date']).days > 365:  # TODO refactor. should last_tweet really be a list?
+        if (Member.now - last_tweet[0]['date']).days > thread_age_limit:
             last_tweet = []
         new_tweets = [tweet for tweet in history[bill][:-1] if (Member.now - tweet['date']).days <= days_old_limit]
         history[bill] = new_tweets + last_tweet
@@ -105,9 +105,9 @@ def remove_old_tweets():
 def main():
     for member in get_members():
         get_data_and_tweet(member)
-    with open('tweet_history.py', 'w') as f:
+    with open('tweet_history.py', mode='w') as f:
         history = remove_old_tweets()
-        f.write("import datetime\n\n\nhistory = {}".format(pprint.pformat(history)))
+        f.write("import datetime\n\n\nhistory = {}\n".format(pprint.pformat(history)))
     if tweets and output_to_file:
         with open('tweet_log.txt', mode='a') as f:
             f.write("{} >> Posted {} new tweet{}.\n".format(time.ctime(), tweets, 's' * (tweets != 1)))

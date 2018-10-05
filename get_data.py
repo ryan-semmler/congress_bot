@@ -16,7 +16,7 @@ class Member:
         self.first_name = data['first_name']
         self.last_name = data['last_name']
         if tag_member and self.handle:
-            self.name = '.@' + self.handle
+            self.name = '@' + self.handle
         else:
             self.name = data['first_name'] + ' ' + data['last_name']
         if 'senator' in data['role'].lower():
@@ -33,8 +33,8 @@ class Member:
     def __repr__(self):
         dist = ''
         if hasattr(self, 'district'):
-            dist += ' District {}'.format(self.district)
-        return "{} {} {} ({}), {}{}".format(self.title, self.first_name, self.last_name, self.party, self.state, dist)
+            dist += str(self.district)
+        return "{} {} {} ({}-{}{})".format(self.title, self.first_name, self.last_name, self.party, self.state, dist)
 
     def __str__(self):
         return self.__repr__()
