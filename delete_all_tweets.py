@@ -16,7 +16,7 @@ def delete_tweets():
             api.destroy_status(tweet.id)
         tweets = [post for post in api.user_timeline(handle) if (now - post.created_at.date()).days <= days_old_limit]
     with open('tweet_history.py', 'w') as f:
-        f.write("import datetime\n\n\nhistory = []")
+        f.write("import datetime\n\n\nhistory = {}")
     print("Deleted {} tweet{}.".format(total, 's' * (total != 1)))
 
 

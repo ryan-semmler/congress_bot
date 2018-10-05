@@ -1,5 +1,5 @@
 import requests
-from config import state, include_rep, propublica_header, twitter_config, district, days_old_limit
+from config import state, include_rep, propublica_header, twitter_config, district, days_old_limit, tag_member
 from datetime import date
 import time
 import tweepy
@@ -12,9 +12,13 @@ class Member:
 
     def __init__(self, data):
         self.id = data['id']
+        self.handle = data['twitter_id']
         self.first_name = data['first_name']
         self.last_name = data['last_name']
-        self.name = ' '.join((data['first_name'], data['last_name']))
+        if tag_member and self.handle:
+            self.name = '@' + self.handle
+        else:
+            self.name = data['first_name'] + ' ' + data['last_name']
         if 'senator' in data['role'].lower():
             self.chamber = 'Senate'
             self.title = 'Senator'
@@ -24,14 +28,13 @@ class Member:
             self.title = 'Representative'
         self.state = state.upper()
         self.party = data['party']
-        self.handle = data['twitter_id']
         self.next_election = data['next_election']
 
     def __repr__(self):
         dist = ''
         if hasattr(self, 'district'):
-            dist += ' District {}'.format(self.district)
-        return "{} {} {} ({}), {}{}".format(self.title, self.first_name, self.last_name, self.party, self.state, dist)
+            dist += str(self.district)
+        return "{} {} {} ({}-{}{})".format(self.title, self.first_name, self.last_name, self.party, self.state, dist)
 
     def __str__(self):
         return self.__repr__()
@@ -69,8 +72,7 @@ class Bill:
         self.short_title = data['short_title']
         self.url = data['congressdotgov_url']
         self.govtrack_url = data['govtrack_url']
-        year, month, day = [int(thing) for thing in data['introduced_date'].split('-')]
-        self.date = date(year, month, day)
+        self.date = date(*map(int, data['introduced_date'].split('-')))
         self.subject = data['primary_subject']
         self.cosponsored = cosponsored
 
@@ -83,7 +85,7 @@ class Bill:
     def __eq__(self, other):
         if type(other) != Bill:
             return False
-        return all((self.id == other.id, self.date == other.date))
+        return self.id == other.id and self.date == other.date
 
 
 class Vote:
@@ -98,8 +100,7 @@ class Vote:
         self.question = data['question']
         self.result = data['result']
         self.count = "{}-{}".format(data['total']['yes'], data['total']['no'])
-        year, month, day = [int(thing) for thing in data['date'].split('-')]
-        self.date = date(year, month, day)
+        self.date = date(*map(int, data['date'].split('-')))
         self.position = data['position'].lower()
         self.for_passage = 'pass' in self.question.lower()
         valid_question = not any([word in self.question.lower() for word in ("amendment", "recommit", "table appeal",
@@ -127,7 +128,7 @@ class Vote:
     def __eq__(self, other):
         if type(other) != Vote:
             return False
-        return all((self.member == other.member, self.bill == other.bill))
+        return self.member == other.member and self.bill == other.bill
 
     def get_bill_by_id(self, member, id):
         bill_id, congress = id.split('-')

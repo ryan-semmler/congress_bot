@@ -1,8 +1,8 @@
 from pprint import pformat
 
 
-def clean(handle):
-    return handle[handle.startswith('@'):]
+def at(handle):
+    return '@' * (not handle.startswith('@')) + handle
 
 
 def create_config(action='close'):
@@ -19,8 +19,10 @@ state = '{}'
 include_rep = {}
 district = {}
 
-# Bot won't look at data from api older than this or store old tweets longer than this.
-days_old_limit = 4
+# Bot won't look at new vote or bill data older than this
+days_old_limit = 3
+# New tweets will look back this many days for a relevant thread to reply to
+thread_age_limit = 365
 
 # Assign True to use govtrack url for bills, False for congress.gov
 use_govtrack = True
@@ -36,7 +38,7 @@ tag_member = False
           "Before continuing, make sure you've created a Twitter account and gotten an API key for that account.\n"
           "You'll need your API keys for Twitter and Propublica to continue.\n\nPress ENTER to continue")
 
-    handle = clean(input("Enter the bot's twitter handle: "))
+    handle = at(input("Enter the bot's twitter handle: "))
     state = input("Enter your state's two-letter abbreviation: ").lower()
 
     include_rep = 'y' in input("Include House member data in Twitter updates? y/n: ").lower()
