@@ -1,9 +1,9 @@
 try:
-    from config import days_old_limit, thread_age_limit, handle, max_tweet_len, output_to_file, use_govtrack
+    from config import propublica_header, tweet_age_limit, thread_age_limit, handle, max_tweet_len, output_to_file, use_govtrack
 except ModuleNotFoundError:
     from create_config import create_config
     create_config(action='continue')
-    from config import days_old_limit, thread_age_limit, handle, max_tweet_len, output_to_file, use_govtrack
+    from config import propublica_header, tweet_age_limit, thread_age_limit, handle, max_tweet_len, output_to_file, use_govtrack
 
 try:
     from tweet_history import history
@@ -13,6 +13,7 @@ except (ModuleNotFoundError, ImportError):
 from get_data import get_members, Member, Bill, get_api, get_url_len
 import pprint
 import time
+import requests
 
 
 max_url_len = get_url_len()
@@ -92,12 +93,25 @@ def get_data_and_tweet(member):
             tweets += 1
 
 
+def check_for_followup():
+    """Tweets update when a bill is enacted"""
+    for bill_info in history:
+        bill_id, congress = bill_info.split('-')
+        bill_data = requests.get("https://api.propublica.org/congress/v1/{}/bills/{}.json".format(congress, bill_id),
+                                 headers=propublica_header).json()['results'][0]
+        if bill_data['enacted']:
+            text = "{} was signed into law.".format(bill_data['number'])
+            api.update_status(text)
+            history[bill_info] = []
+
+
 def remove_old_tweets():
+    """Removes items from history after reaching age limit"""
     for bill in history:
         last_tweet = [history[bill][-1]]
         if (Member.now - last_tweet[0]['date']).days > thread_age_limit:
             last_tweet = []
-        new_tweets = [tweet for tweet in history[bill][:-1] if (Member.now - tweet['date']).days <= days_old_limit]
+        new_tweets = [tweet for tweet in history[bill][:-1] if (Member.now - tweet['date']).days <= tweet_age_limit]
         history[bill] = new_tweets + last_tweet
     return {k: v for k, v in history.items() if history[k]}
 
@@ -105,8 +119,9 @@ def remove_old_tweets():
 def main():
     for member in get_members():
         get_data_and_tweet(member)
+    check_for_followup()
+    history = remove_old_tweets()
     with open('tweet_history.py', mode='w') as f:
-        history = remove_old_tweets()
         f.write("import datetime\n\n\nhistory = {}\n".format(pprint.pformat(history)))
     if tweets and output_to_file:
         with open('tweet_log.txt', mode='a') as f:

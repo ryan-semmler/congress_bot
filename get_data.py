@@ -1,5 +1,5 @@
 import requests
-from config import state, include_rep, propublica_header, twitter_config, district, days_old_limit, tag_member
+from config import state, include_rep, propublica_header, twitter_config, district, tweet_age_limit, tag_member
 from datetime import date
 import time
 import tweepy
@@ -47,7 +47,7 @@ class Member:
         vote_data = requests.get("https://api.propublica.org/congress/v1/members/{}/votes.json".format(self.id),
                                  headers=propublica_header).json()['results'][0]['votes']
         all_votes = [Vote(self, data) for data in vote_data]
-        recent_votes = [vote for vote in all_votes if (Member.now - vote.date).days <= days_old_limit]
+        recent_votes = [vote for vote in all_votes if (Member.now - vote.date).days <= tweet_age_limit]
         return [vote for vote in recent_votes if vote.include]
 
     def get_bills(self):
@@ -60,7 +60,7 @@ class Member:
             "https://api.propublica.org/congress/v1/members/{}/bills/cosponsored.json".format(self.id),
             headers=propublica_header).json()['results'][0]['bills']
         cosponsored_bills = [Bill(self, data, cosponsored=True) for data in cosponsored_bill_data]
-        return [bill for bill in bills + cosponsored_bills if (Member.now - bill.date).days <= days_old_limit]
+        return [bill for bill in bills + cosponsored_bills if (Member.now - bill.date).days <= tweet_age_limit]
 
 
 class Bill:
@@ -75,6 +75,8 @@ class Bill:
         self.date = date(*map(int, data['introduced_date'].split('-')))
         self.subject = data['primary_subject']
         self.cosponsored = cosponsored
+        self.vetoed = data['vetoed']
+        self.enacted = data['enacted']
 
     def __repr__(self):
         return "{}: {}".format(self.number, self.short_title)
@@ -130,8 +132,8 @@ class Vote:
             return False
         return self.member == other.member and self.bill == other.bill
 
-    def get_bill_by_id(self, member, id):
-        bill_id, congress = id.split('-')
+    def get_bill_by_id(self, member, bill_info):
+        bill_id, congress = bill_info.split('-')
         bill_data = requests.get("https://api.propublica.org/congress/v1/{}/bills/{}.json".format(congress, bill_id),
                                  headers=propublica_header).json()['results'][0]
         return Bill(member, bill_data)

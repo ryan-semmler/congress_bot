@@ -19,8 +19,8 @@ state = '{}'
 include_rep = {}
 district = {}
 
-# Bot won't look at new vote or bill data older than this
-days_old_limit = 3
+# Bot won't look at new vote or bill data older than this many days
+tweet_age_limit = 3
 # New tweets will look back this many days for a relevant thread to reply to
 thread_age_limit = 365
 
@@ -31,6 +31,7 @@ use_govtrack = True
 output_to_file = True
 
 # Use members' twitter handles instead of names when possible
+# WARNING: Repeatedly tagging users may cause Twitter to flag the bot as spam and restrict tweeting privileges.
 tag_member = False
 """
 
