@@ -1,19 +1,18 @@
 try:
-    from config import propublica_header, tweet_age_limit, thread_age_limit, handle, max_tweet_len, output_to_file, use_govtrack
+    from config import propublica_header, tweet_age_limit, thread_age_limit, handle, max_tweet_len, output_to_file
 except ModuleNotFoundError:
     from create_config import create_config
     create_config(action='continue')
-    from config import propublica_header, tweet_age_limit, thread_age_limit, handle, max_tweet_len, output_to_file, use_govtrack
+    from config import propublica_header, tweet_age_limit, thread_age_limit, handle, max_tweet_len, output_to_file
 
 try:
     from tweet_history import history
 except (ModuleNotFoundError, ImportError):
     history = {}
 
-from get_data import get_members, Member, Bill, get_api, get_url_len
+from get_data import Member, Bill, get_bill_by_id, get_members, get_api, get_url_len
 import pprint
 import time
-import requests
 
 
 max_url_len = get_url_len()
@@ -25,18 +24,16 @@ def get_tweet_text(item):
     """Puts together the text of the tweet"""
     member = item.member
     if isinstance(item, Bill):
-        url = (item.url, item.govtrack_url)[use_govtrack]
         text = "{} {} {}".format(member.name, ('introduced', 'cosponsored')[item.cosponsored], item)
-        url_len = min(max_url_len, len(url))
+        url_len = min(max_url_len, len(item.url))
         if len(text) + url_len + 1 > max_tweet_len:
             text = text[:max_tweet_len - url_len - 3] + '…'
-        tweet = text + '\n' + url
+        tweet = text + '\n' + item.url
     else:  # if a Vote instance
         has_bill = isinstance(item.bill, Bill)
         text = "{} {}".format(member.name, item)
         if has_bill:
-            url = (item.bill.url, item.bill.govtrack_url)[use_govtrack]
-            url_len = min(max_url_len, len(url))
+            url_len = min(max_url_len, len(item.url))
         else:
             url_len = 0
         max_text_len = max_tweet_len - (len(item.count) + len(item.result) + (url_len + 1) * has_bill + 2)
@@ -44,7 +41,7 @@ def get_tweet_text(item):
             text = text[:max_text_len - 2] + '…'
         tweet = text + "\n{} {}".format(item.result, item.count)
         if has_bill:
-            tweet += "\n{}".format(url)
+            tweet += "\n{}".format(item.url)
     return tweet
 
 
@@ -94,15 +91,23 @@ def get_data_and_tweet(member):
 
 
 def check_for_followup():
-    """Tweets update when a bill is enacted"""
-    for bill_info in history:
-        bill_id, congress = bill_info.split('-')
-        bill_data = requests.get("https://api.propublica.org/congress/v1/{}/bills/{}.json".format(congress, bill_id),
-                                 headers=propublica_header).json()['results'][0]
-        if bill_data['enacted']:
-            text = "{} was signed into law.".format(bill_data['number'])
+    """Tweets update when a bill is enacted or vetoed"""
+    for bill_id in history:
+        bill = get_bill_by_id(bill_id)
+        if bill.enacted:
+            text = "{} has been enacted.\n{}".format(bill.number, bill.url)
             api.update_status(text)
-            history[bill_info] = []
+            history[bill_id] = []
+        elif bill.vetoed:
+            item_in_history = any(tweet['type'] == 'veto' for tweet in history[bill_id])
+            if not item_in_history:
+                text = "{} has been vetoed.\n{}".format(bill.number, bill.url)
+                tweet = api.udpate_status(text)
+                item_data = {'date': Member.now,
+                             'type': 'veto',
+                             'member': 'none',
+                             'tweet_id': tweet.id_str}
+                history[bill_id].append(item_data)
 
 
 def remove_old_tweets():

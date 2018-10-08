@@ -1,5 +1,6 @@
 import requests
-from config import state, include_rep, propublica_header, twitter_config, district, tweet_age_limit, tag_member
+from config import state, include_rep, propublica_header, twitter_config, \
+    district, tweet_age_limit, use_govtrack, tag_member
 from datetime import date
 import time
 import tweepy
@@ -70,8 +71,7 @@ class Bill:
         self.id = data['bill_id']
         self.title = data['title']
         self.short_title = data['short_title']
-        self.url = data['congressdotgov_url']
-        self.govtrack_url = data['govtrack_url']
+        self.url = (data['congressdotgov_url'], data['govtrack_url'])[use_govtrack]
         self.date = date(*map(int, data['introduced_date'].split('-')))
         self.subject = data['primary_subject']
         self.cosponsored = cosponsored
@@ -95,7 +95,7 @@ class Vote:
         self.member = member
         self.session = data['session']
         try:
-            self.bill = self.get_bill_by_id(member, data['bill']['bill_id'])
+            self.bill = get_bill_by_id(data['bill']['bill_id'], member)
         except:
             self.bill = data['bill']
         self.description = data['description']
@@ -132,11 +132,12 @@ class Vote:
             return False
         return self.member == other.member and self.bill == other.bill
 
-    def get_bill_by_id(self, member, bill_info):
-        bill_id, congress = bill_info.split('-')
-        bill_data = requests.get("https://api.propublica.org/congress/v1/{}/bills/{}.json".format(congress, bill_id),
-                                 headers=propublica_header).json()['results'][0]
-        return Bill(member, bill_data)
+
+def get_bill_by_id(bill_id, member=None):
+    bill_number, congress = bill_id.split('-')
+    bill_data = requests.get("https://api.propublica.org/congress/v1/{}/bills/{}.json".format(congress, bill_number),
+                             headers=propublica_header).json()['results'][0]
+    return Bill(member, bill_data)
 
 
 def get_members():
