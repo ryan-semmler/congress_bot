@@ -1,9 +1,9 @@
 try:
-    from config import propublica_header, tweet_age_limit, thread_age_limit, handle, max_tweet_len, output_to_file
+    from config import tweet_age_limit, thread_age_limit, handle, max_tweet_len, output_to_file
 except ModuleNotFoundError:
     from create_config import create_config
     create_config(action='continue')
-    from config import propublica_header, tweet_age_limit, thread_age_limit, handle, max_tweet_len, output_to_file
+    from config import tweet_age_limit, thread_age_limit, handle, max_tweet_len, output_to_file
 
 try:
     from tweet_history import history
