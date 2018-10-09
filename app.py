@@ -1,18 +1,17 @@
 try:
-    from config import days_old_limit, thread_age_limit, handle, max_tweet_len, output_to_file, use_govtrack
+    from config import tweet_age_limit, thread_age_limit, handle, max_tweet_len, output_to_file
 except ModuleNotFoundError:
     from create_config import create_config
     create_config(action='continue')
-    from config import days_old_limit, thread_age_limit, handle, max_tweet_len, output_to_file, use_govtrack
+    from config import tweet_age_limit, thread_age_limit, handle, max_tweet_len, output_to_file
 
 try:
     from tweet_history import history
 except (ModuleNotFoundError, ImportError):
     history = {}
 
-from get_data import get_members, Member, Bill, get_api, get_url_len
+from get_data import Bill, get_bill_by_id, get_members, get_api, get_url_len, now
 import pprint
-import time
 
 
 max_url_len = get_url_len()
@@ -24,18 +23,16 @@ def get_tweet_text(item):
     """Puts together the text of the tweet"""
     member = item.member
     if isinstance(item, Bill):
-        url = (item.url, item.govtrack_url)[use_govtrack]
         text = "{} {} {}".format(member.name, ('introduced', 'cosponsored')[item.cosponsored], item)
-        url_len = min(max_url_len, len(url))
+        url_len = min(max_url_len, len(item.url))
         if len(text) + url_len + 1 > max_tweet_len:
             text = text[:max_tweet_len - url_len - 3] + '…'
-        tweet = text + '\n' + url
+        tweet = text + '\n' + item.url
     else:  # if a Vote instance
         has_bill = isinstance(item.bill, Bill)
         text = "{} {}".format(member.name, item)
         if has_bill:
-            url = (item.bill.url, item.bill.govtrack_url)[use_govtrack]
-            url_len = min(max_url_len, len(url))
+            url_len = min(max_url_len, len(item.bill.url))
         else:
             url_len = 0
         max_text_len = max_tweet_len - (len(item.count) + len(item.result) + (url_len + 1) * has_bill + 2)
@@ -43,7 +40,7 @@ def get_tweet_text(item):
             text = text[:max_text_len - 2] + '…'
         tweet = text + "\n{} {}".format(item.result, item.count)
         if has_bill:
-            tweet += "\n{}".format(url)
+            tweet += "\n{}".format(item.bill.url)
     return tweet
 
 
@@ -61,7 +58,7 @@ def get_data_and_tweet(member):
 
     def update_history(item, tweet_id):
         """Adds new tweet to history"""
-        item_data = {'date': item.date,
+        item_data = {'date': now,
                      'type': ('vote', 'bill')[is_bill],
                      'member': item.member.last_name,
                      'tweet_id': tweet_id}
@@ -92,24 +89,49 @@ def get_data_and_tweet(member):
             tweets += 1
 
 
+def enacted_or_vetoed():
+    """Tweets reply to bill's tweet thread when it's enacted or vetoed"""
+    for bill_id in history:
+        bill = get_bill_by_id(bill_id)
+        if bill:
+            last_tweet = history[bill_id][-1]
+            if bill.enacted:
+                text = "{} has been enacted.\n{}".format(bill.number, bill.url)
+                api.update_status(handle + ' ' + text, in_reply_to_status_id=last_tweet['tweet_id'])
+                history[bill_id] = []
+            elif bill.vetoed:
+                item_in_history = any(tweet['type'] == 'veto' for tweet in history[bill_id])
+                if not item_in_history:
+                    text = "{} has been vetoed.\n{}".format(bill.number, bill.url)
+                    tweet = api.udpate_status(handle + ' ' + text, in_reply_to_status_id=last_tweet['tweet_id'])
+                    item_data = {'date': now,
+                                 'type': 'veto',
+                                 'member': 'none',
+                                 'tweet_id': tweet.id_str}
+                    history[bill_id].append(item_data)
+
+
 def remove_old_tweets():
-    for bill in history:
-        last_tweet = [history[bill][-1]]
-        if (Member.now - last_tweet[0]['date']).days > thread_age_limit:
+    """Removes old items from history"""
+    for bill_id in history:
+        last_tweet = [history[bill_id][-1]]
+        if (now - last_tweet[0]['date']).days > thread_age_limit:
             last_tweet = []
-        new_tweets = [tweet for tweet in history[bill][:-1] if (Member.now - tweet['date']).days <= days_old_limit]
-        history[bill] = new_tweets + last_tweet
+        new_tweets = [tweet for tweet in history[bill_id][:-1] if (now - tweet['date']).days <= tweet_age_limit]
+        history[bill_id] = new_tweets + last_tweet
     return {k: v for k, v in history.items() if history[k]}
 
 
 def main():
+    enacted_or_vetoed()
     for member in get_members():
         get_data_and_tweet(member)
+    history = remove_old_tweets()
     with open('tweet_history.py', mode='w') as f:
-        history = remove_old_tweets()
         f.write("import datetime\n\n\nhistory = {}\n".format(pprint.pformat(history)))
     if tweets and output_to_file:
         with open('tweet_log.txt', mode='a') as f:
+            import time
             f.write("{} >> Posted {} new tweet{}.\n".format(time.ctime(), tweets, 's' * (tweets != 1)))
     print("Done. Posted {} new tweet{}.".format(tweets, 's' * (tweets != 1)))
 
