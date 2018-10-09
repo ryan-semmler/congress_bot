@@ -94,20 +94,22 @@ def check_for_followup():
     """Tweets update when a bill is enacted or vetoed"""
     for bill_id in history:
         bill = get_bill_by_id(bill_id)
-        if bill.enacted:
-            text = "{} has been enacted.\n{}".format(bill.number, bill.url)
-            api.update_status(text)
-            history[bill_id] = []
-        elif bill.vetoed:
-            item_in_history = any(tweet['type'] == 'veto' for tweet in history[bill_id])
-            if not item_in_history:
-                text = "{} has been vetoed.\n{}".format(bill.number, bill.url)
-                tweet = api.udpate_status(text)
-                item_data = {'date': Member.now,
-                             'type': 'veto',
-                             'member': 'none',
-                             'tweet_id': tweet.id_str}
-                history[bill_id].append(item_data)
+        if bill:
+            last_tweet = history['bill_id'][-1]
+            if bill.enacted:
+                text = "{} has been enacted.\n{}".format(bill.number, bill.url)
+                api.update_status(handle + ' ' + text, in_reply_to_status_id=last_tweet['tweet_id'])
+                history[bill_id] = []
+            elif bill.vetoed:
+                item_in_history = any(tweet['type'] == 'veto' for tweet in history[bill_id])
+                if not item_in_history:
+                    text = "{} has been vetoed.\n{}".format(bill.number, bill.url)
+                    tweet = api.udpate_status(handle + ' ' + text, in_reply_to_status_id=last_tweet['tweet_id'])
+                    item_data = {'date': Member.now,
+                                 'type': 'veto',
+                                 'member': 'none',
+                                 'tweet_id': tweet.id_str}
+                    history[bill_id].append(item_data)
 
 
 def remove_old_tweets():

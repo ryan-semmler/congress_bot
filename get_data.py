@@ -135,9 +135,12 @@ class Vote:
 
 def get_bill_by_id(bill_id, member=None):
     bill_number, congress = bill_id.split('-')
-    bill_data = requests.get("https://api.propublica.org/congress/v1/{}/bills/{}.json".format(congress, bill_number),
-                             headers=propublica_header).json()['results'][0]
-    return Bill(member, bill_data)
+    try:
+        bill_data = requests.get("https://api.propublica.org/congress/v1/{}/bills/{}.json".format(congress, bill_number),
+                                 headers=propublica_header).json()['results'][0]
+        return Bill(member, bill_data)
+    except KeyError:
+        return None
 
 
 def get_members():
