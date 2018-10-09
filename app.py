@@ -10,9 +10,8 @@ try:
 except (ModuleNotFoundError, ImportError):
     history = {}
 
-from get_data import Member, Bill, get_bill_by_id, get_members, get_api, get_url_len
+from get_data import Bill, get_bill_by_id, get_members, get_api, get_url_len, now
 import pprint
-import time
 
 
 max_url_len = get_url_len()
@@ -33,7 +32,7 @@ def get_tweet_text(item):
         has_bill = isinstance(item.bill, Bill)
         text = "{} {}".format(member.name, item)
         if has_bill:
-            url_len = min(max_url_len, len(item.url))
+            url_len = min(max_url_len, len(item.bill.url))
         else:
             url_len = 0
         max_text_len = max_tweet_len - (len(item.count) + len(item.result) + (url_len + 1) * has_bill + 2)
@@ -41,7 +40,7 @@ def get_tweet_text(item):
             text = text[:max_text_len - 2] + '…'
         tweet = text + "\n{} {}".format(item.result, item.count)
         if has_bill:
-            tweet += "\n{}".format(item.url)
+            tweet += "\n{}".format(item.bill.url)
     return tweet
 
 
@@ -59,7 +58,7 @@ def get_data_and_tweet(member):
 
     def update_history(item, tweet_id):
         """Adds new tweet to history"""
-        item_data = {'date': item.date,
+        item_data = {'date': now,
                      'type': ('vote', 'bill')[is_bill],
                      'member': item.member.last_name,
                      'tweet_id': tweet_id}
@@ -90,12 +89,12 @@ def get_data_and_tweet(member):
             tweets += 1
 
 
-def check_for_followup():
-    """Tweets update when a bill is enacted or vetoed"""
+def enacted_or_vetoed():
+    """Tweets reply to bill's tweet thread when it's enacted or vetoed"""
     for bill_id in history:
         bill = get_bill_by_id(bill_id)
         if bill:
-            last_tweet = history['bill_id'][-1]
+            last_tweet = history[bill_id][-1]
             if bill.enacted:
                 text = "{} has been enacted.\n{}".format(bill.number, bill.url)
                 api.update_status(handle + ' ' + text, in_reply_to_status_id=last_tweet['tweet_id'])
@@ -105,7 +104,7 @@ def check_for_followup():
                 if not item_in_history:
                     text = "{} has been vetoed.\n{}".format(bill.number, bill.url)
                     tweet = api.udpate_status(handle + ' ' + text, in_reply_to_status_id=last_tweet['tweet_id'])
-                    item_data = {'date': Member.now,
+                    item_data = {'date': now,
                                  'type': 'veto',
                                  'member': 'none',
                                  'tweet_id': tweet.id_str}
@@ -113,25 +112,26 @@ def check_for_followup():
 
 
 def remove_old_tweets():
-    """Removes items from history after reaching age limit"""
-    for bill in history:
-        last_tweet = [history[bill][-1]]
-        if (Member.now - last_tweet[0]['date']).days > thread_age_limit:
+    """Removes old items from history"""
+    for bill_id in history:
+        last_tweet = [history[bill_id][-1]]
+        if (now - last_tweet[0]['date']).days > thread_age_limit:
             last_tweet = []
-        new_tweets = [tweet for tweet in history[bill][:-1] if (Member.now - tweet['date']).days <= tweet_age_limit]
-        history[bill] = new_tweets + last_tweet
+        new_tweets = [tweet for tweet in history[bill_id][:-1] if (now - tweet['date']).days <= tweet_age_limit]
+        history[bill_id] = new_tweets + last_tweet
     return {k: v for k, v in history.items() if history[k]}
 
 
 def main():
+    enacted_or_vetoed()
     for member in get_members():
         get_data_and_tweet(member)
-    check_for_followup()
     history = remove_old_tweets()
     with open('tweet_history.py', mode='w') as f:
         f.write("import datetime\n\n\nhistory = {}\n".format(pprint.pformat(history)))
     if tweets and output_to_file:
         with open('tweet_log.txt', mode='a') as f:
+            import time
             f.write("{} >> Posted {} new tweet{}.\n".format(time.ctime(), tweets, 's' * (tweets != 1)))
     print("Done. Posted {} new tweet{}.".format(tweets, 's' * (tweets != 1)))
 

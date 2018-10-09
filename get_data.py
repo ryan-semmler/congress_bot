@@ -7,10 +7,11 @@ import tweepy
 from requests_oauthlib import OAuth1
 
 
-class Member:
-    localtime = time.localtime()
-    now = date(localtime.tm_year, localtime.tm_mon, localtime.tm_mday)
+localtime = time.localtime()
+now = date(localtime.tm_year, localtime.tm_mon, localtime.tm_mday)
 
+
+class Member:
     def __init__(self, data):
         self.id = data['id']
         self.handle = data['twitter_id']
@@ -48,7 +49,7 @@ class Member:
         vote_data = requests.get("https://api.propublica.org/congress/v1/members/{}/votes.json".format(self.id),
                                  headers=propublica_header).json()['results'][0]['votes']
         all_votes = [Vote(self, data) for data in vote_data]
-        recent_votes = [vote for vote in all_votes if (Member.now - vote.date).days <= tweet_age_limit]
+        recent_votes = [vote for vote in all_votes if (now - vote.date).days <= tweet_age_limit]
         return [vote for vote in recent_votes if vote.include]
 
     def get_bills(self):
@@ -61,7 +62,7 @@ class Member:
             "https://api.propublica.org/congress/v1/members/{}/bills/cosponsored.json".format(self.id),
             headers=propublica_header).json()['results'][0]['bills']
         cosponsored_bills = [Bill(self, data, cosponsored=True) for data in cosponsored_bill_data]
-        return [bill for bill in bills + cosponsored_bills if (Member.now - bill.date).days <= tweet_age_limit]
+        return [bill for bill in bills + cosponsored_bills if (now - bill.date).days <= tweet_age_limit]
 
 
 class Bill:
@@ -94,10 +95,7 @@ class Vote:
     def __init__(self, member, data):
         self.member = member
         self.session = data['session']
-        try:
-            self.bill = get_bill_by_id(data['bill']['bill_id'], member)
-        except:
-            self.bill = data['bill']
+        self.bill = get_bill_by_id(data['bill']['bill_id'], member) or data['bill']
         self.description = data['description']
         self.question = data['question']
         self.result = data['result']
