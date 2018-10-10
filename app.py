@@ -11,7 +11,7 @@ except (ModuleNotFoundError, ImportError):
     history = {}
 
 from get_data import Bill, get_bill_by_id, get_members, get_api, get_url_len, now
-import pprint
+from pprint import pformat
 
 
 max_url_len = get_url_len()
@@ -130,7 +130,7 @@ def main():
         get_data_and_tweet(member)
     history = remove_old_tweets()
     with open('tweet_history.py', mode='w') as f:
-        f.write("import datetime\n\n\nhistory = {}\n".format(pprint.pformat(history)))
+        f.write("import datetime\n\n\nhistory = {}\n".format(pformat(history)))
     if tweets and output_to_file:
         with open('tweet_log.txt', mode='a') as f:
             import time

@@ -1,14 +1,14 @@
-import requests
+from requests import get
 from config import (state, include_rep, propublica_header, twitter_config,
                     district, tweet_age_limit, use_govtrack, tag_member)
 from datetime import date
-import time
-import tweepy
+from time import localtime
+from tweepy import OAuthHandler, API
 from requests_oauthlib import OAuth1
 
 
-localtime = time.localtime()
-now = date(localtime.tm_year, localtime.tm_mon, localtime.tm_mday)
+ltime = localtime()
+now = date(ltime.tm_year, ltime.tm_mon, ltime.tm_mday)
 
 
 class Member:
@@ -46,7 +46,7 @@ class Member:
 
     def get_votes(self):
         """returns list of bills and nominations voted on by the member"""
-        vote_data = requests.get("https://api.propublica.org/congress/v1/members/{}/votes.json".format(self.id),
+        vote_data = get("https://api.propublica.org/congress/v1/members/{}/votes.json".format(self.id),
                                  headers=propublica_header).json()['results'][0]['votes']
         all_votes = [Vote(self, data) for data in vote_data]
         recent_votes = [vote for vote in all_votes if (now - vote.date).days <= tweet_age_limit]
@@ -54,11 +54,11 @@ class Member:
 
     def get_bills(self):
         """returns list of bills introduced or cosponsored by the member"""
-        bill_data = requests.get("https://api.propublica.org/congress/v1/members/{}/bills/introduced.json".format(
+        bill_data = get("https://api.propublica.org/congress/v1/members/{}/bills/introduced.json".format(
             self.id), headers=propublica_header).json()['results'][0]['bills']
         bills = [Bill(self, data) for data in bill_data]
 
-        cosponsored_bill_data = requests.get(
+        cosponsored_bill_data = get(
             "https://api.propublica.org/congress/v1/members/{}/bills/cosponsored.json".format(self.id),
             headers=propublica_header).json()['results'][0]['bills']
         cosponsored_bills = [Bill(self, data, cosponsored=True) for data in cosponsored_bill_data]
@@ -134,7 +134,7 @@ class Vote:
 def get_bill_by_id(bill_id, member=None):
     bill_number, congress = bill_id.split('-')
     try:
-        bill_data = requests.get("https://api.propublica.org/congress/v1/{}/bills/{}.json".format(congress, bill_number),
+        bill_data = get("https://api.propublica.org/congress/v1/{}/bills/{}.json".format(congress, bill_number),
                                  headers=propublica_header).json()['results'][0]
         return Bill(member, bill_data)
     except KeyError:
@@ -143,20 +143,20 @@ def get_bill_by_id(bill_id, member=None):
 
 def get_members():
     """Return Member instances for senators and representative if applicable"""
-    senators_data = requests.get("https://api.propublica.org/congress/v1/members/senate/{}/current.json".format(state),
+    senators_data = get("https://api.propublica.org/congress/v1/members/senate/{}/current.json".format(state),
                                  headers=propublica_header).json()['results']
     senators = [Member(data) for data in senators_data]
     if include_rep and district:
-        rep_data = requests.get("https://api.propublica.org/congress/v1/members/house/{}/{}/current.json".format(
+        rep_data = get("https://api.propublica.org/congress/v1/members/house/{}/{}/current.json".format(
                                 state, district), headers=propublica_header).json()['results'][0]
         return senators + [Member(rep_data)]
     return senators
 
 
 def get_api():
-    auth = tweepy.OAuthHandler(twitter_config['consumer_key'], twitter_config['consumer_secret'])
+    auth = OAuthHandler(twitter_config['consumer_key'], twitter_config['consumer_secret'])
     auth.set_access_token(twitter_config['access_token'], twitter_config['access_token_secret'])
-    return tweepy.API(auth)
+    return API(auth)
 
 
 def get_url_len():
@@ -164,7 +164,7 @@ def get_url_len():
                   twitter_config['consumer_secret'],
                   twitter_config['access_token'],
                   twitter_config['access_token_secret'])
-    return requests.get('https://api.twitter.com/1.1/help/configuration.json', auth=auth).json()['short_url_length']
+    return get('https://api.twitter.com/1.1/help/configuration.json', auth=auth).json()['short_url_length']
 
 
 if __name__ == '__main__':

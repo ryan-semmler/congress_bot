@@ -1,15 +1,11 @@
-from get_data import get_api
+from get_data import get_api, now
 from config import handle, tweet_age_limit
 from tweet_history import history
-import time
-import datetime
-import pprint
+from pprint import pformat
 
 
 def delete_tweets(history):
     total = 0
-    date = time.localtime()
-    now = datetime.date(date.tm_year, date.tm_mon, date.tm_mday)
     api = get_api()
     tweets = [post for post in api.user_timeline(handle) if (now - post.created_at.date()).days <= tweet_age_limit]
     while tweets:
@@ -21,7 +17,7 @@ def delete_tweets(history):
         history[bill_id] = [item for item in history[bill_id] if (now - item['tweeted_date']).days > tweet_age_limit]
     history = {k: v for k, v in history.items() if history[k]}
     with open('tweet_history.py', 'w') as f:
-        f.write("import datetime\n\n\nhistory = {}\n".format(pprint.pformat(history)))
+        f.write("import datetime\n\n\nhistory = {}\n".format(pformat(history)))
     print("Deleted {} tweet{}.".format(total, 's' * (total != 1)))
 
 
