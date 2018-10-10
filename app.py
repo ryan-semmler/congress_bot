@@ -1,9 +1,9 @@
 try:
-    from config import tweet_age_limit, thread_age_limit, handle, max_tweet_len, output_to_file
+    from config import tweet_age_limit, thread_replies, update_age_limit, handle, max_tweet_len, output_to_file
 except ModuleNotFoundError:
     from create_config import create_config
     create_config(action='continue')
-    from config import tweet_age_limit, thread_age_limit, handle, max_tweet_len, output_to_file
+    from config import tweet_age_limit, thread_replies, update_age_limit, handle, max_tweet_len, output_to_file
 
 try:
     from tweet_history import history
@@ -80,7 +80,7 @@ def get_data_and_tweet(member):
             else:
                 bill_id = item.bill['bill_id']
         if not item_in_history(item):
-            if bill_id in history:
+            if thread_replies and bill_id in history:
                 text = get_tweet_text(item, reply=True)
                 last_tweet = history[bill_id][-1]
                 tweet = api.update_status(handle + ' ' + text, in_reply_to_status_id=last_tweet['tweet_id'])
@@ -93,20 +93,26 @@ def get_data_and_tweet(member):
 
 
 def enacted_or_vetoed():
-    """Tweets reply to bill's tweet thread when it's enacted or vetoed"""
+    """Tweets update on bills in history when they're enacted or vetoed"""
     for bill_id in history:
         bill = get_bill_by_id(bill_id)
         if bill:
             last_tweet = history[bill_id][-1]
             if bill.enacted:
                 text = "{} has been enacted.\n{}".format(bill.number, bill.url)
-                api.update_status(handle + ' ' + text, in_reply_to_status_id=last_tweet['tweet_id'])
+                if thread_replies:
+                    api.update_status(handle + ' ' + text, in_reply_to_status_id=last_tweet['tweet_id'])
+                else:
+                    api.update_status(text)
                 history[bill_id] = []
             elif bill.vetoed:
                 item_in_history = any(tweet['type'] == 'veto' for tweet in history[bill_id])
                 if not item_in_history:
                     text = "{} has been vetoed.\n{}".format(bill.number, bill.url)
-                    tweet = api.udpate_status(handle + ' ' + text, in_reply_to_status_id=last_tweet['tweet_id'])
+                    if thread_replies:
+                        tweet = api.udpate_status(handle + ' ' + text, in_reply_to_status_id=last_tweet['tweet_id'])
+                    else:
+                        tweet = api.update_status(text)
                     item_data = {'item_date': bill.date,
                                  'tweeted_date': now,
                                  'type': 'veto',
@@ -119,7 +125,7 @@ def remove_old_tweets():
     """Removes old items from history"""
     for bill_id in history:
         last_tweet = [history[bill_id][-1]]
-        if (now - last_tweet[0]['tweeted_date']).days > thread_age_limit:
+        if (now - last_tweet[0]['tweeted_date']).days > update_age_limit:
             last_tweet = []
         new_tweets = [tweet for tweet in history[bill_id][:-1] if (now - tweet['tweeted_date']).days <= tweet_age_limit]
         history[bill_id] = new_tweets + last_tweet

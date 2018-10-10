@@ -21,8 +21,12 @@ district = {}
 
 # Bot won't look at new vote or bill data older than this many days
 tweet_age_limit = 3
-# New tweets will look back this many days for a relevant thread to reply to
-thread_age_limit = 365
+
+# if True, all tweets regarding a given bill (introduced, voted, enacted, etc) will appear in one thread
+thread_replies = True
+
+# Bot will tweet updates when a bill is vetoed or enacted for bills with tweets up to this many days old
+update_age_limit = 365
 
 # Assign True to use govtrack url for bills, False for congress.gov
 use_govtrack = True
