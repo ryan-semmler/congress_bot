@@ -52,13 +52,14 @@ def get_data_and_tweet(member):
         if bill_id in history:
             date, obj_type, member = item.date, ('vote', 'bill')[is_bill], item.member.last_name
             for tweet in history[bill_id]:
-                if tweet['date'] == date and tweet['type'] == obj_type and tweet['member'] == member:
+                if tweet['item_date'] == date and tweet['type'] == obj_type and tweet['member'] == member:
                     return True
         return False
 
     def update_history(item, tweet_id):
         """Adds new tweet to history"""
-        item_data = {'date': now,
+        item_data = {'item_date': item.date,
+                     'tweeted_date': now,
                      'type': ('vote', 'bill')[is_bill],
                      'member': item.member.last_name,
                      'tweet_id': tweet_id}
@@ -104,7 +105,8 @@ def enacted_or_vetoed():
                 if not item_in_history:
                     text = "{} has been vetoed.\n{}".format(bill.number, bill.url)
                     tweet = api.udpate_status(handle + ' ' + text, in_reply_to_status_id=last_tweet['tweet_id'])
-                    item_data = {'date': now,
+                    item_data = {'item_date': bill.date,
+                                 'tweeted_date': now,
                                  'type': 'veto',
                                  'member': 'none',
                                  'tweet_id': tweet.id_str}
@@ -115,9 +117,9 @@ def remove_old_tweets():
     """Removes old items from history"""
     for bill_id in history:
         last_tweet = [history[bill_id][-1]]
-        if (now - last_tweet[0]['date']).days > thread_age_limit:
+        if (now - last_tweet[0]['tweeted_date']).days > thread_age_limit:
             last_tweet = []
-        new_tweets = [tweet for tweet in history[bill_id][:-1] if (now - tweet['date']).days <= tweet_age_limit]
+        new_tweets = [tweet for tweet in history[bill_id][:-1] if (now - tweet['tweeted_date']).days <= tweet_age_limit]
         history[bill_id] = new_tweets + last_tweet
     return {k: v for k, v in history.items() if history[k]}
 

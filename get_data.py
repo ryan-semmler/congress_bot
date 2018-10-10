@@ -1,6 +1,6 @@
 import requests
-from config import state, include_rep, propublica_header, twitter_config, \
-    district, tweet_age_limit, use_govtrack, tag_member
+from config import (state, include_rep, propublica_header, twitter_config,
+                    district, tweet_age_limit, use_govtrack, tag_member)
 from datetime import date
 import time
 import tweepy
