@@ -19,7 +19,7 @@ api = get_api()
 tweets = 0
 
 
-def get_tweet_text(item):
+def get_tweet_text(item, reply=False):
     """Puts together the text of the tweet"""
     member = item.member
     if isinstance(item, Bill):
@@ -35,7 +35,8 @@ def get_tweet_text(item):
             url_len = min(max_url_len, len(item.bill.url))
         else:
             url_len = 0
-        max_text_len = max_tweet_len - (len(item.count) + len(item.result) + (url_len + 1) * has_bill + 2)
+        max_text_len = max_tweet_len - (len(item.count) + len(item.result) + (url_len + 1) * has_bill +
+                                        (len(handle) + 1) * reply + 2)
         if len(text) > max_text_len:
             text = text[:max_text_len - 2] + '…'
         tweet = text + "\n{} {}".format(item.result, item.count)
@@ -79,11 +80,12 @@ def get_data_and_tweet(member):
             else:
                 bill_id = item.bill['bill_id']
         if not item_in_history(item):
-            text = get_tweet_text(item)
             if bill_id in history:
+                text = get_tweet_text(item, reply=True)
                 last_tweet = history[bill_id][-1]
                 tweet = api.update_status(handle + ' ' + text, in_reply_to_status_id=last_tweet['tweet_id'])
             else:
+                text = get_tweet_text(item)
                 tweet = api.update_status(text)
             update_history(item, tweet.id_str)
             global tweets
